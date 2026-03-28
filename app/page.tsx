@@ -18,10 +18,17 @@ export default function Home() {
         body: JSON.stringify({ laudo })
       })
       const data = await res.json()
+      if (data.erro) {
+        setTraducao('Erro da API: ' + data.erro)
+        setLoading(false)
+        return
+      }
+
       setTraducao(data.traducao)
-    } catch (e) {
-      setTraducao('Erro ao traduzir. Tente novamente.')
+    } catch (e: any) {
+      setTraducao('Erro: ' + e.message)
     }
+
     setLoading(false)
   }
 
