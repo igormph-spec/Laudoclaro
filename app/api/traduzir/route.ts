@@ -16,5 +16,11 @@ REGRAS IMPORTANTES:
   messages: [{
     role: 'user',
     content: `Traduza este laudo de ressonância para linguagem simples:\n\n${laudo}`
+    - NUNCA inferir ou mencionar sintomas do paciente. O laudo descreve achados de imagem, não sintomas.
+- NUNCA dizer que um achado "explica" ou "causa" sintomas do paciente.
+- NUNCA sugerir diagnósticos clínicos além do que está escrito no laudo.
+- A conclusão deve resumir apenas o que foi descrito no laudo, sem relacionar com sintomas.
+- Use frases como "esse achado PODE estar associado a..." apenas quando o próprio laudo mencionar correlação clínica.
+
   }]
 })
