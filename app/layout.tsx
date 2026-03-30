@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { ClerkProvider } from '@clerk/nextjs'
 
 export const metadata: Metadata = {
   title: 'LaudoClaro',
@@ -11,8 +12,10 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="pt-BR">
-      <body>{children}</body>
-    </html>
+    <ClerkProvider>
+      <html lang="pt-BR">
+        <body>{children}</body>
+      </html>
+    </ClerkProvider>
   )
 }
