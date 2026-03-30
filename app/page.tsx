@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { UserButton } from '@clerk/nextjs'
 
 export default function Home() {
   const [laudo, setLaudo] = useState('')
@@ -40,6 +41,17 @@ export default function Home() {
       padding: '40px 20px',
       fontFamily: "'Segoe UI', sans-serif"
     }}>
+
+      {/* Header com botão de usuário */}
+      <div style={{
+        width: '100%',
+        maxWidth: '620px',
+        display: 'flex',
+        justifyContent: 'flex-end',
+        marginBottom: '16px'
+      }}>
+        <UserButton afterSignOutUrl="/sign-in" />
+      </div>
 
       {/* Logo */}
       <div style={{ marginBottom: '8px' }}>
@@ -154,10 +166,7 @@ export default function Home() {
             color: '#2c3e6b',
             fontSize: '1rem',
             fontWeight: '700',
-            marginBottom: '16px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
+            marginBottom: '16px'
           }}>
             ✅ Tradução do seu laudo
           </h2>
