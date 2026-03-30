@@ -1,7 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { UserButton } from '@clerk/nextjs'
+import { useState, useEffect } from 'react'
+import { UserButton, useAuth } from '@clerk/nextjs'
+import { useRouter } from 'next/navigation'
+
 
 export default function Home() {
   const [laudo, setLaudo] = useState('')
