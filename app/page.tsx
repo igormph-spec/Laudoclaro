@@ -6,6 +6,17 @@ import { useRouter } from 'next/navigation'
 
 
 export default function Home() {
+    const { isLoaded, isSignedIn } = useAuth()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      router.push('/sign-in')
+    }
+  }, [isLoaded, isSignedIn, router])
+
+  if (!isLoaded || !isSignedIn) return null
+
   const [laudo, setLaudo] = useState('')
   const [traducao, setTraducao] = useState('')
   const [loading, setLoading] = useState(false)
