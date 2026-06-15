@@ -4,8 +4,6 @@ import { useState, useEffect, useCallback } from 'react'
 import { UserButton, useAuth } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 
-// Número de WhatsApp do suporte/vendas (atualizar antes de lançar)
-const WHATSAPP_SUPORTE = '5511999999999'
 const FREE_LIMIT = 3
 
 interface HistoricoItem {
@@ -255,7 +253,6 @@ export default function Home() {
 
   const usoRestante = Math.max(0, FREE_LIMIT - usageCount)
   const limiteAtingido = !isPremium && usageCount >= FREE_LIMIT
-  const linkWhatsapp = `https://wa.me/${WHATSAPP_SUPORTE}?text=${encodeURIComponent('Olá! Quero assinar o plano Premium do LaudoClaro.')}`
 
   return (
     <main style={{
@@ -360,28 +357,9 @@ export default function Home() {
               <h3 style={{ color: '#b8860b', margin: '0 0 8px', fontSize: '1.1rem' }}>
                 Você usou suas {FREE_LIMIT} traduções gratuitas
               </h3>
-              <p style={{ color: '#8a6914', fontSize: '0.9rem', margin: '0 0 20px', lineHeight: '1.6' }}>
-                Para continuar usando o LaudoClaro sem limites, fale com a gente no WhatsApp e ative o plano premium.
+              <p style={{ color: '#8a6914', fontSize: '0.9rem', margin: 0, lineHeight: '1.6' }}>
+                Em breve o LaudoClaro estará disponível em planos com acesso ilimitado. Fique de olho nas novidades!
               </p>
-              <a
-                href={linkWhatsapp}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '12px 28px',
-                  background: '#25d366',
-                  color: 'white',
-                  borderRadius: '12px',
-                  fontWeight: '700',
-                  textDecoration: 'none',
-                  fontSize: '1rem'
-                }}
-              >
-                💬 Falar no WhatsApp
-              </a>
             </div>
           )}
 
