@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import { ClerkProvider } from '@clerk/nextjs'
-import { ptBR } from '@clerk/localizations'
 
 export const metadata: Metadata = {
   title: 'LaudoClaro',
@@ -69,7 +68,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <ClerkProvider localization={ptBR} appearance={clerkAppearance}>
+    <ClerkProvider appearance={clerkAppearance}>
       <html lang="pt-BR">
         <body>{children}</body>
       </html>
