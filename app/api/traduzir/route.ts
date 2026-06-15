@@ -1,25 +1,56 @@
- import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { auth, clerkClient } from '@clerk/nextjs/server'
+
+const FREE_LIMIT = 3
 
 export async function POST(request: NextRequest) {
   try {
+    const { userId } = await auth()
+    if (!userId) {
+      return NextResponse.json({ erro: 'Não autenticado' }, { status: 401 })
+    }
+
+    const client = await clerkClient()
+    const user = await client.users.getUser(userId)
+    const meta = user.publicMetadata as { usageCount?: number; isPremium?: boolean }
+    const usageCount = meta.usageCount ?? 0
+    const isPremium = meta.isPremium ?? false
+
+    if (!isPremium && usageCount >= FREE_LIMIT) {
+      return NextResponse.json({
+        erro: 'limite_atingido',
+        usageCount,
+        limit: FREE_LIMIT
+      }, { status: 403 })
+    }
+
     const { laudo } = await request.json()
+    if (!laudo?.trim()) {
+      return NextResponse.json({ erro: 'Laudo vazio' }, { status: 400 })
+    }
 
     const systemPrompt = [
-      'Voce e um assistente especializado em explicar laudos de ressonancia magnetica da coluna para pacientes leigos em portugues brasileiro.',
+      'Você é um assistente especializado em explicar laudos médicos para pacientes leigos em português brasileiro.',
+      '',
+      'Você é capaz de interpretar qualquer tipo de exame de imagem ou laudo médico, incluindo:',
+      '- Ressonância magnética (RM) de qualquer parte do corpo',
+      '- Tomografia computadorizada (TC)',
+      '- Ultrassonografia',
+      '- Radiografia (Raio-X)',
+      '- Ecocardiograma',
+      '- Laudos laboratoriais e anatomopatológicos',
+      '- Qualquer outro tipo de laudo ou relatório médico',
       '',
       'REGRAS IMPORTANTES:',
-      '- Seja preciso com a terminologia medica. NUNCA confunda os termos.',
-      '- Abaulamento discal: disco levemente saliente mas integro. NAO e hernia. Explique como o disco esta um pouco estufado para fora, mas sem romper.',
-      '- Protrusao discal: disco projeta mais, mas sem ruptura do anel fibroso. NAO e hernia.',
-      '- Hernia discal ou extrusao: material do disco rompe o anel fibroso. Use esse termo SOMENTE se o laudo usar explicitamente.',
-      '- NUNCA inferir ou mencionar sintomas do paciente.',
-      '- NUNCA dizer que um achado explica ou causa sintomas do paciente.',
-      '- NUNCA sugerir diagnosticos clinicos alem do que esta escrito no laudo.',
-      '- A conclusao deve resumir apenas o que foi descrito no laudo, sem relacionar com sintomas.',
+      '- Seja preciso com a terminologia médica. NUNCA confunda os termos.',
       '- Explique cada achado de forma clara, humanizada e tranquilizadora quando apropriado.',
-      '- Use linguagem simples, como se explicasse para um familiar.',
-      '- Organize com subtitulos simples.',
-      '- Ao final, reforce que o laudo deve ser interpretado pelo medico.'
+      '- Use linguagem simples, como se explicasse para um familiar sem formação médica.',
+      '- Organize a resposta com subtítulos simples e parágrafos curtos.',
+      '- NUNCA inferir ou mencionar sintomas do paciente.',
+      '- NUNCA relacionar achados com sintomas ou diagnósticos clínicos além do que está escrito.',
+      '- NUNCA sugerir tratamentos ou condutas médicas.',
+      '- Ao final, reforce sempre que o laudo deve ser interpretado pelo médico responsável.',
+      '- Se o texto enviado não parecer um laudo médico, informe educadamente.',
     ].join('\n')
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -31,11 +62,11 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1024,
+        max_tokens: 2048,
         system: systemPrompt,
         messages: [{
           role: 'user',
-          content: 'Traduza este laudo de ressonancia para linguagem simples:\n\n' + laudo
+          content: 'Explique este laudo médico em linguagem simples:\n\n' + laudo
         }]
       })
     })
@@ -46,8 +77,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ erro: JSON.stringify(data) }, { status: 500 })
     }
 
+    await client.users.updateUserMetadata(userId, {
+      publicMetadata: { ...meta, usageCount: usageCount + 1 }
+    })
+
     const traducao = data.content[0].text
-    return NextResponse.json({ traducao })
+    return NextResponse.json({
+      traducao,
+      usageCount: usageCount + 1,
+      limit: FREE_LIMIT,
+      isPremium
+    })
 
   } catch (e: any) {
     return NextResponse.json({ erro: e.message }, { status: 500 })

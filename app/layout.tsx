@@ -3,7 +3,7 @@ import { ClerkProvider } from '@clerk/nextjs'
 
 export const metadata: Metadata = {
   title: 'LaudoClaro',
-  description: 'Entenda seu laudo de ressonância em linguagem simples',
+  description: 'Entenda qualquer laudo médico em linguagem simples',
 }
 
 export default function RootLayout({
