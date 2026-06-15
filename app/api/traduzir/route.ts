@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth, clerkClient } from '@clerk/nextjs/server'
 
-const FREE_LIMIT = 3
-
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth()
@@ -12,16 +10,21 @@ export async function POST(request: NextRequest) {
 
     const client = await clerkClient()
     const user = await client.users.getUser(userId)
-    const meta = user.publicMetadata as { usageCount?: number; isPremium?: boolean }
+    const meta = user.publicMetadata as {
+      usageCount?: number
+      credits?: number
+      isPremium?: boolean
+      whatsapp?: string
+    }
+
     const usageCount = meta.usageCount ?? 0
+    const credits = meta.credits ?? 0
     const isPremium = meta.isPremium ?? false
 
-    if (!isPremium && usageCount >= FREE_LIMIT) {
-      return NextResponse.json({
-        erro: 'limite_atingido',
-        usageCount,
-        limit: FREE_LIMIT
-      }, { status: 403 })
+    // 1º laudo é gratuito; a partir do 2º exige créditos ou premium
+    const primeiroLaudoGratis = usageCount === 0
+    if (!primeiroLaudoGratis && !isPremium && credits <= 0) {
+      return NextResponse.json({ erro: 'sem_creditos' }, { status: 403 })
     }
 
     const { laudo } = await request.json()
@@ -77,15 +80,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ erro: JSON.stringify(data) }, { status: 500 })
     }
 
+    // Atualizar contadores: incrementar uso, decrementar crédito se não for o primeiro gratuito
+    const novosCredits = primeiroLaudoGratis ? credits : credits - 1
     await client.users.updateUserMetadata(userId, {
-      publicMetadata: { ...meta, usageCount: usageCount + 1 }
+      publicMetadata: {
+        ...meta,
+        usageCount: usageCount + 1,
+        credits: novosCredits
+      }
     })
 
-    const traducao = data.content[0].text
     return NextResponse.json({
-      traducao,
+      traducao: data.content[0].text,
       usageCount: usageCount + 1,
-      limit: FREE_LIMIT,
+      credits: novosCredits,
       isPremium
     })
 

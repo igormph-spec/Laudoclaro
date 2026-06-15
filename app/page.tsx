@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { UserButton, useAuth } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 
-const FREE_LIMIT = 3
+const FREE_LIMIT = 1 // 1º laudo gratuito
 
 interface HistoricoItem {
   id: string
@@ -43,7 +43,8 @@ export default function Home() {
   const router = useRouter()
 
   // Perfil
-  const [usageCount, setUsageCount] = useState<number>(0)
+  const [usageCount, setUsageCount] = useState(0)
+  const [credits, setCredits] = useState(0)
   const [isPremium, setIsPremium] = useState(false)
   const [whatsappSalvo, setWhatsappSalvo] = useState<string | null>(null)
   const [perfilCarregado, setPerfilCarregado] = useState(false)
@@ -59,14 +60,15 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [erroTraducao, setErroTraducao] = useState('')
 
+  // Pagamento
+  const [iniciandoPagamento, setIniciandoPagamento] = useState(false)
+
   // Histórico
   const [historico, setHistorico] = useState<HistoricoItem[]>([])
   const [itemSelecionado, setItemSelecionado] = useState<HistoricoItem | null>(null)
 
   useEffect(() => {
-    if (isLoaded && !isSignedIn) {
-      router.push('/sign-in')
-    }
+    if (isLoaded && !isSignedIn) router.push('/sign-in')
   }, [isLoaded, isSignedIn, router])
 
   const carregarPerfil = useCallback(async () => {
@@ -75,6 +77,7 @@ export default function Home() {
       if (!res.ok) return
       const data = await res.json()
       setUsageCount(data.usageCount ?? 0)
+      setCredits(data.credits ?? 0)
       setIsPremium(data.isPremium ?? false)
       setWhatsappSalvo(data.whatsapp ?? null)
     } finally {
@@ -135,22 +138,17 @@ export default function Home() {
         fontFamily: "'Segoe UI', system-ui, sans-serif"
       }}>
         <div style={{
-          background: 'white',
-          borderRadius: '24px',
-          padding: '40px 36px',
-          maxWidth: '420px',
-          width: '100%',
-          boxShadow: '0 8px 40px rgba(108,155,210,0.15)',
-          textAlign: 'center'
+          background: 'white', borderRadius: '24px', padding: '40px 36px',
+          maxWidth: '420px', width: '100%',
+          boxShadow: '0 8px 40px rgba(108,155,210,0.15)', textAlign: 'center'
         }}>
           <div style={{ fontSize: '3rem', marginBottom: '16px' }}>📱</div>
           <h1 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#2c3e6b', margin: '0 0 10px' }}>
             Antes de começar
           </h1>
           <p style={{ color: '#6b7a99', fontSize: '0.95rem', marginBottom: '28px', lineHeight: '1.6' }}>
-            Informe seu número de WhatsApp para acessar o LaudoClaro. Você receberá atualizações e suporte direto pelo WhatsApp.
+            Informe seu número de WhatsApp para acessar o LaudoClaro.
           </p>
-
           <form onSubmit={salvarTelefone}>
             <div style={{ position: 'relative', marginBottom: '8px' }}>
               <span style={{
@@ -164,39 +162,26 @@ export default function Home() {
                 placeholder="(XX) 9XXXX-XXXX"
                 required
                 style={{
-                  width: '100%',
-                  padding: '14px 14px 14px 40px',
-                  borderRadius: '12px',
+                  width: '100%', padding: '14px 14px 14px 40px', borderRadius: '12px',
                   border: telefoneErro ? '1.5px solid #e74c3c' : '1.5px solid #d8e4f0',
-                  fontSize: '1rem',
-                  color: '#2c3e6b',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                  letterSpacing: '0.5px'
+                  fontSize: '1rem', color: '#2c3e6b', outline: 'none',
+                  boxSizing: 'border-box', letterSpacing: '0.5px'
                 }}
               />
             </div>
-
             {telefoneErro && (
               <p style={{ color: '#e74c3c', fontSize: '0.85rem', margin: '0 0 12px', textAlign: 'left' }}>
                 ⚠️ {telefoneErro}
               </p>
             )}
-
             <button
               type="submit"
               disabled={salvandoTelefone || telefone.replace(/\D/g, '').length < 11}
               style={{
-                width: '100%',
-                padding: '14px',
-                borderRadius: '12px',
-                border: 'none',
+                width: '100%', padding: '14px', borderRadius: '12px', border: 'none',
                 background: salvandoTelefone || telefone.replace(/\D/g, '').length < 11
-                  ? '#b0c8e8'
-                  : 'linear-gradient(135deg, #6c9bd2, #4a7abf)',
-                color: 'white',
-                fontSize: '1rem',
-                fontWeight: '600',
+                  ? '#b0c8e8' : 'linear-gradient(135deg, #6c9bd2, #4a7abf)',
+                color: 'white', fontSize: '1rem', fontWeight: '600',
                 cursor: salvandoTelefone || telefone.replace(/\D/g, '').length < 11 ? 'not-allowed' : 'pointer',
                 marginTop: '8px'
               }}
@@ -204,7 +189,6 @@ export default function Home() {
               {salvandoTelefone ? 'Salvando...' : 'Acessar o LaudoClaro →'}
             </button>
           </form>
-
           <p style={{ color: '#b0b8cc', fontSize: '0.75rem', marginTop: '20px' }}>
             Seus dados são protegidos e não serão compartilhados.
           </p>
@@ -213,7 +197,6 @@ export default function Home() {
     )
   }
 
-  // Tela principal
   async function traduzir() {
     if (!laudo.trim() || loading) return
     setLoading(true)
@@ -228,12 +211,10 @@ export default function Home() {
       })
       const data = await res.json()
 
-      if (data.erro === 'limite_atingido') {
-        setUsageCount(data.usageCount)
-        setErroTraducao('limite_atingido')
+      if (data.erro === 'sem_creditos') {
+        setErroTraducao('sem_creditos')
         return
       }
-
       if (data.erro) {
         setErroTraducao('Erro: ' + data.erro)
         return
@@ -241,6 +222,7 @@ export default function Home() {
 
       setTraducao(data.traducao)
       setUsageCount(data.usageCount)
+      setCredits(data.credits)
       setIsPremium(data.isPremium)
       salvarHistorico(laudo, data.traducao)
       setHistorico(carregarHistorico())
@@ -251,8 +233,25 @@ export default function Home() {
     }
   }
 
-  const usoRestante = Math.max(0, FREE_LIMIT - usageCount)
-  const limiteAtingido = !isPremium && usageCount >= FREE_LIMIT
+  async function comprar() {
+    setIniciandoPagamento(true)
+    try {
+      const res = await fetch('/api/criar-pagamento', { method: 'POST' })
+      const data = await res.json()
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        alert('Erro ao iniciar pagamento. Tente novamente.')
+      }
+    } catch {
+      alert('Erro de conexão. Tente novamente.')
+    } finally {
+      setIniciandoPagamento(false)
+    }
+  }
+
+  const semCreditos = !isPremium && usageCount >= FREE_LIMIT && credits <= 0
+  const laudosRestantes = isPremium ? '∞' : usageCount === 0 ? '1 gratuito' : `${credits} crédito${credits !== 1 ? 's' : ''}`
 
   return (
     <main style={{
@@ -262,13 +261,9 @@ export default function Home() {
     }}>
       {/* Header */}
       <header style={{
-        background: 'white',
-        borderBottom: '1px solid #e8edf5',
-        padding: '12px 24px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        boxShadow: '0 1px 8px rgba(108,155,210,0.08)'
+        background: 'white', borderBottom: '1px solid #e8edf5',
+        padding: '12px 24px', display: 'flex', alignItems: 'center',
+        justifyContent: 'space-between', boxShadow: '0 1px 8px rgba(108,155,210,0.08)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <svg width="32" height="32" viewBox="0 0 56 56" fill="none">
@@ -285,12 +280,11 @@ export default function Home() {
           ) : (
             <span style={{
               fontSize: '0.8rem',
-              color: usoRestante === 0 ? '#e74c3c' : '#6b7a99',
-              background: usoRestante === 0 ? '#fdecea' : '#f0f4ff',
-              padding: '4px 10px',
-              borderRadius: '20px'
+              color: semCreditos ? '#e74c3c' : '#6b7a99',
+              background: semCreditos ? '#fdecea' : '#f0f4ff',
+              padding: '4px 10px', borderRadius: '20px'
             }}>
-              {usoRestante === 0 ? '⚠️ Limite atingido' : `${usoRestante} de ${FREE_LIMIT} traduções gratuitas`}
+              {semCreditos ? '⚠️ Sem créditos' : `${laudosRestantes} disponível${credits !== 1 ? 'eis' : ''}`}
             </span>
           )}
           <UserButton afterSignOutUrl="/sign-in" />
@@ -301,12 +295,8 @@ export default function Home() {
         {/* Sidebar histórico */}
         {historico.length > 0 && (
           <aside style={{
-            width: '260px',
-            minWidth: '260px',
-            background: 'white',
-            borderRight: '1px solid #e8edf5',
-            padding: '20px 0',
-            overflowY: 'auto'
+            width: '260px', minWidth: '260px', background: 'white',
+            borderRight: '1px solid #e8edf5', padding: '20px 0', overflowY: 'auto'
           }}>
             <p style={{ fontSize: '0.75rem', fontWeight: '700', color: '#9aa3b8', textTransform: 'uppercase', letterSpacing: '0.5px', padding: '0 16px 12px' }}>
               Histórico
@@ -316,14 +306,10 @@ export default function Home() {
                 key={item.id}
                 onClick={() => { setItemSelecionado(item); setTraducao(''); setLaudo(''); setErroTraducao('') }}
                 style={{
-                  width: '100%',
-                  textAlign: 'left',
-                  padding: '12px 16px',
-                  border: 'none',
+                  width: '100%', textAlign: 'left', padding: '12px 16px', border: 'none',
                   background: itemSelecionado?.id === item.id ? '#f0f4ff' : 'transparent',
                   borderLeft: itemSelecionado?.id === item.id ? '3px solid #6c9bd2' : '3px solid transparent',
-                  cursor: 'pointer',
-                  transition: 'background 0.15s'
+                  cursor: 'pointer', transition: 'background 0.15s'
                 }}
               >
                 <div style={{ fontSize: '0.75rem', color: '#9aa3b8', marginBottom: '4px' }}>{item.data}</div>
@@ -346,19 +332,43 @@ export default function Home() {
           </div>
 
           {/* Paywall */}
-          {limiteAtingido && (
+          {(semCreditos || erroTraducao === 'sem_creditos') && (
             <div style={{
               width: '100%', maxWidth: '580px', marginBottom: '24px',
-              background: 'linear-gradient(135deg, #fff8e1, #fffde7)',
-              border: '1.5px solid #f9ca24',
-              borderRadius: '20px', padding: '28px', textAlign: 'center'
+              background: 'white', border: '1.5px solid #e8edf5',
+              borderRadius: '20px', padding: '32px', textAlign: 'center',
+              boxShadow: '0 4px 24px rgba(108,155,210,0.12)'
             }}>
-              <div style={{ fontSize: '2rem', marginBottom: '10px' }}>⭐</div>
-              <h3 style={{ color: '#b8860b', margin: '0 0 8px', fontSize: '1.1rem' }}>
-                Você usou suas {FREE_LIMIT} traduções gratuitas
+              <div style={{ fontSize: '2rem', marginBottom: '12px' }}>🩺</div>
+              <h3 style={{ color: '#2c3e6b', margin: '0 0 8px', fontSize: '1.15rem', fontWeight: '700' }}>
+                Continue usando o LaudoClaro
               </h3>
-              <p style={{ color: '#8a6914', fontSize: '0.9rem', margin: 0, lineHeight: '1.6' }}>
-                Em breve o LaudoClaro estará disponível em planos com acesso ilimitado. Fique de olho nas novidades!
+              <p style={{ color: '#6b7a99', fontSize: '0.9rem', margin: '0 0 8px', lineHeight: '1.6' }}>
+                Você usou seu laudo gratuito. Para continuar, adquira um pacote de créditos.
+              </p>
+              <div style={{
+                background: 'linear-gradient(135deg, #f5f0ff, #e8f4fd)',
+                borderRadius: '14px', padding: '20px', margin: '20px 0'
+              }}>
+                <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#2c3e6b', marginBottom: '4px' }}>
+                  R$ 39,90
+                </div>
+                <div style={{ color: '#6b7a99', fontSize: '0.9rem' }}>20 laudos · sem prazo de validade</div>
+              </div>
+              <button
+                onClick={comprar}
+                disabled={iniciandoPagamento}
+                style={{
+                  width: '100%', padding: '14px', borderRadius: '12px', border: 'none',
+                  background: iniciandoPagamento ? '#b0c8e8' : 'linear-gradient(135deg, #6c9bd2, #4a7abf)',
+                  color: 'white', fontSize: '1rem', fontWeight: '700',
+                  cursor: iniciandoPagamento ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {iniciandoPagamento ? '⏳ Redirecionando...' : '💳 Comprar 20 laudos'}
+              </button>
+              <p style={{ color: '#b0b8cc', fontSize: '0.75rem', marginTop: '12px' }}>
+                Pagamento seguro via Mercado Pago · PIX, cartão ou boleto
               </p>
             </div>
           )}
@@ -385,12 +395,12 @@ export default function Home() {
             </div>
           )}
 
-          {/* Formulário de tradução */}
+          {/* Formulário */}
           {!itemSelecionado && (
             <>
               <div style={{
-                width: '100%', maxWidth: '580px',
-                background: 'white', borderRadius: '20px', padding: '28px',
+                width: '100%', maxWidth: '580px', background: 'white',
+                borderRadius: '20px', padding: '28px',
                 boxShadow: '0 4px 24px rgba(108,155,210,0.12)', marginBottom: '20px'
               }}>
                 <label style={{ display: 'block', color: '#4a5580', fontWeight: '600', marginBottom: '10px', fontSize: '0.95rem' }}>
@@ -401,33 +411,32 @@ export default function Home() {
                   onChange={e => setLaudo(e.target.value)}
                   placeholder="Ex: Hemograma completo — Hemácias: 4,5 M/µL | Leucócitos: 8.200/µL..."
                   rows={8}
-                  disabled={limiteAtingido}
+                  disabled={semCreditos}
                   style={{
                     width: '100%', padding: '14px', borderRadius: '12px',
                     border: '1.5px solid #d8e4f0', fontSize: '0.95rem',
                     color: '#2c3e6b', resize: 'vertical', outline: 'none',
                     boxSizing: 'border-box', lineHeight: '1.6',
-                    background: limiteAtingido ? '#f8f9fb' : 'white'
+                    background: semCreditos ? '#f8f9fb' : 'white'
                   }}
                 />
                 <button
                   onClick={traduzir}
-                  disabled={loading || limiteAtingido || !laudo.trim()}
+                  disabled={loading || semCreditos || !laudo.trim()}
                   style={{
                     width: '100%', marginTop: '16px', padding: '14px',
                     borderRadius: '12px', border: 'none',
-                    background: (loading || limiteAtingido || !laudo.trim()) ? '#b0c8e8' : 'linear-gradient(135deg, #6c9bd2, #4a7abf)',
+                    background: (loading || semCreditos || !laudo.trim()) ? '#b0c8e8' : 'linear-gradient(135deg, #6c9bd2, #4a7abf)',
                     color: 'white', fontSize: '1rem', fontWeight: '600',
-                    cursor: (loading || limiteAtingido || !laudo.trim()) ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.2s', letterSpacing: '0.3px'
+                    cursor: (loading || semCreditos || !laudo.trim()) ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s'
                   }}
                 >
                   {loading ? '⏳ Explicando seu laudo...' : '🔍 Explicar Laudo'}
                 </button>
               </div>
 
-              {/* Erro */}
-              {erroTraducao && erroTraducao !== 'limite_atingido' && (
+              {erroTraducao && erroTraducao !== 'sem_creditos' && (
                 <div style={{
                   width: '100%', maxWidth: '580px', marginBottom: '20px',
                   background: '#fdecea', border: '1px solid #f5c6cb',
@@ -438,11 +447,10 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Resultado */}
               {traducao && (
                 <div style={{
-                  width: '100%', maxWidth: '580px',
-                  background: 'white', borderRadius: '20px', padding: '28px',
+                  width: '100%', maxWidth: '580px', background: 'white',
+                  borderRadius: '20px', padding: '28px',
                   boxShadow: '0 4px 24px rgba(108,155,210,0.12)', borderLeft: '5px solid #6c9bd2'
                 }}>
                   <h2 style={{ color: '#2c3e6b', fontSize: '1rem', fontWeight: '700', marginBottom: '16px' }}>
