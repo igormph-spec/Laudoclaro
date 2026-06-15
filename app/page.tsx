@@ -92,6 +92,28 @@ export default function Home() {
     }
   }, [isSignedIn, carregarPerfil])
 
+  const salvarTelefone = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setTelefoneErro('')
+    setSalvandoTelefone(true)
+    try {
+      const res = await fetch('/api/salvar-telefone', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ whatsapp: telefone })
+      })
+      const data = await res.json()
+      if (data.erro) {
+        setTelefoneErro(data.erro)
+      } else {
+        setWhatsappSalvo(data.whatsapp)
+      }
+    } catch {
+      setTelefoneErro('Erro de conexão. Tente novamente.')
+    }
+    setSalvandoTelefone(false)
+  }
+
   if (!isLoaded || !isSignedIn || !perfilCarregado) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #f5f0ff 0%, #e8f4fd 100%)' }}>
@@ -103,30 +125,7 @@ export default function Home() {
     )
   }
 
-  // Tela de captura de WhatsApp
   if (!whatsappSalvo) {
-    async function salvarTelefone(e: React.FormEvent) {
-      e.preventDefault()
-      setTelefoneErro('')
-      setSalvandoTelefone(true)
-      try {
-        const res = await fetch('/api/salvar-telefone', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ whatsapp: telefone })
-        })
-        const data = await res.json()
-        if (data.erro) {
-          setTelefoneErro(data.erro)
-        } else {
-          setWhatsappSalvo(data.whatsapp)
-        }
-      } catch {
-        setTelefoneErro('Erro de conexão. Tente novamente.')
-      }
-      setSalvandoTelefone(false)
-    }
-
     return (
       <main style={{
         minHeight: '100vh',
