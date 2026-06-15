@@ -11,7 +11,8 @@
     "next": "14.2.3",
     "react": "^18",
     "react-dom": "^18",
-    "@clerk/nextjs": "^5"
+    "@clerk/nextjs": "^5",
+    "@clerk/localizations": "^3"
   },
   "devDependencies": {
     "typescript": "^5",
