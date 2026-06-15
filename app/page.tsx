@@ -1,8 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { UserButton, useAuth } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
+
+// Número de WhatsApp do suporte/vendas (atualizar antes de lançar)
+const WHATSAPP_SUPORTE = '5511999999999'
+const FREE_LIMIT = 3
 
 interface HistoricoItem {
   id: string
@@ -29,19 +33,37 @@ function carregarHistorico(): HistoricoItem[] {
   return JSON.parse(localStorage.getItem(HISTORICO_KEY) || '[]')
 }
 
+function formatarTelefone(valor: string): string {
+  const digits = valor.replace(/\D/g, '').slice(0, 11)
+  if (digits.length <= 2) return digits.length ? `(${digits}` : ''
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
+}
+
 export default function Home() {
   const { isLoaded, isSignedIn } = useAuth()
   const router = useRouter()
 
+  // Perfil
+  const [usageCount, setUsageCount] = useState<number>(0)
+  const [isPremium, setIsPremium] = useState(false)
+  const [whatsappSalvo, setWhatsappSalvo] = useState<string | null>(null)
+  const [perfilCarregado, setPerfilCarregado] = useState(false)
+
+  // Captura de telefone
+  const [telefone, setTelefone] = useState('')
+  const [telefoneErro, setTelefoneErro] = useState('')
+  const [salvandoTelefone, setSalvandoTelefone] = useState(false)
+
+  // Tradução
   const [laudo, setLaudo] = useState('')
   const [traducao, setTraducao] = useState('')
   const [loading, setLoading] = useState(false)
+  const [erroTraducao, setErroTraducao] = useState('')
+
+  // Histórico
   const [historico, setHistorico] = useState<HistoricoItem[]>([])
   const [itemSelecionado, setItemSelecionado] = useState<HistoricoItem | null>(null)
-  const [usageCount, setUsageCount] = useState<number | null>(null)
-  const [isPremium, setIsPremium] = useState(false)
-  const [limiteAtingido, setLimiteAtingido] = useState(false)
-  const FREE_LIMIT = 3
 
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
@@ -49,18 +71,156 @@ export default function Home() {
     }
   }, [isLoaded, isSignedIn, router])
 
+  const carregarPerfil = useCallback(async () => {
+    try {
+      const res = await fetch('/api/perfil')
+      if (!res.ok) return
+      const data = await res.json()
+      setUsageCount(data.usageCount ?? 0)
+      setIsPremium(data.isPremium ?? false)
+      setWhatsappSalvo(data.whatsapp ?? null)
+    } finally {
+      setPerfilCarregado(true)
+    }
+  }, [])
+
   useEffect(() => {
     if (isSignedIn) {
+      carregarPerfil()
       setHistorico(carregarHistorico())
     }
-  }, [isSignedIn])
+  }, [isSignedIn, carregarPerfil])
 
-  if (!isLoaded || !isSignedIn) return null
+  if (!isLoaded || !isSignedIn || !perfilCarregado) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #f5f0ff 0%, #e8f4fd 100%)' }}>
+        <div style={{ textAlign: 'center', color: '#6b7a99' }}>
+          <div style={{ fontSize: '2rem', marginBottom: '12px' }}>🩺</div>
+          <p>Carregando...</p>
+        </div>
+      </div>
+    )
+  }
 
+  // Tela de captura de WhatsApp
+  if (!whatsappSalvo) {
+    async function salvarTelefone(e: React.FormEvent) {
+      e.preventDefault()
+      setTelefoneErro('')
+      setSalvandoTelefone(true)
+      try {
+        const res = await fetch('/api/salvar-telefone', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ whatsapp: telefone })
+        })
+        const data = await res.json()
+        if (data.erro) {
+          setTelefoneErro(data.erro)
+        } else {
+          setWhatsappSalvo(data.whatsapp)
+        }
+      } catch {
+        setTelefoneErro('Erro de conexão. Tente novamente.')
+      }
+      setSalvandoTelefone(false)
+    }
+
+    return (
+      <main style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #f5f0ff 0%, #e8f4fd 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '24px',
+        fontFamily: "'Segoe UI', system-ui, sans-serif"
+      }}>
+        <div style={{
+          background: 'white',
+          borderRadius: '24px',
+          padding: '40px 36px',
+          maxWidth: '420px',
+          width: '100%',
+          boxShadow: '0 8px 40px rgba(108,155,210,0.15)',
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: '3rem', marginBottom: '16px' }}>📱</div>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#2c3e6b', margin: '0 0 10px' }}>
+            Antes de começar
+          </h1>
+          <p style={{ color: '#6b7a99', fontSize: '0.95rem', marginBottom: '28px', lineHeight: '1.6' }}>
+            Informe seu número de WhatsApp para acessar o LaudoClaro. Você receberá atualizações e suporte direto pelo WhatsApp.
+          </p>
+
+          <form onSubmit={salvarTelefone}>
+            <div style={{ position: 'relative', marginBottom: '8px' }}>
+              <span style={{
+                position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)',
+                color: '#9aa3b8', fontSize: '0.95rem', pointerEvents: 'none'
+              }}>🇧🇷</span>
+              <input
+                type="tel"
+                value={telefone}
+                onChange={e => setTelefone(formatarTelefone(e.target.value))}
+                placeholder="(XX) 9XXXX-XXXX"
+                required
+                style={{
+                  width: '100%',
+                  padding: '14px 14px 14px 40px',
+                  borderRadius: '12px',
+                  border: telefoneErro ? '1.5px solid #e74c3c' : '1.5px solid #d8e4f0',
+                  fontSize: '1rem',
+                  color: '#2c3e6b',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  letterSpacing: '0.5px'
+                }}
+              />
+            </div>
+
+            {telefoneErro && (
+              <p style={{ color: '#e74c3c', fontSize: '0.85rem', margin: '0 0 12px', textAlign: 'left' }}>
+                ⚠️ {telefoneErro}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={salvandoTelefone || telefone.replace(/\D/g, '').length < 11}
+              style={{
+                width: '100%',
+                padding: '14px',
+                borderRadius: '12px',
+                border: 'none',
+                background: salvandoTelefone || telefone.replace(/\D/g, '').length < 11
+                  ? '#b0c8e8'
+                  : 'linear-gradient(135deg, #6c9bd2, #4a7abf)',
+                color: 'white',
+                fontSize: '1rem',
+                fontWeight: '600',
+                cursor: salvandoTelefone || telefone.replace(/\D/g, '').length < 11 ? 'not-allowed' : 'pointer',
+                marginTop: '8px'
+              }}
+            >
+              {salvandoTelefone ? 'Salvando...' : 'Acessar o LaudoClaro →'}
+            </button>
+          </form>
+
+          <p style={{ color: '#b0b8cc', fontSize: '0.75rem', marginTop: '20px' }}>
+            Seus dados são protegidos e não serão compartilhados.
+          </p>
+        </div>
+      </main>
+    )
+  }
+
+  // Tela principal
   async function traduzir() {
-    if (!laudo.trim()) return
+    if (!laudo.trim() || loading) return
     setLoading(true)
     setTraducao('')
+    setErroTraducao('')
     setItemSelecionado(null)
     try {
       const res = await fetch('/api/traduzir', {
@@ -71,15 +231,13 @@ export default function Home() {
       const data = await res.json()
 
       if (data.erro === 'limite_atingido') {
-        setLimiteAtingido(true)
         setUsageCount(data.usageCount)
-        setLoading(false)
+        setErroTraducao('limite_atingido')
         return
       }
 
       if (data.erro) {
-        setTraducao('Erro: ' + data.erro)
-        setLoading(false)
+        setErroTraducao('Erro: ' + data.erro)
         return
       }
 
@@ -89,12 +247,15 @@ export default function Home() {
       salvarHistorico(laudo, data.traducao)
       setHistorico(carregarHistorico())
     } catch (e: any) {
-      setTraducao('Erro de conexão: ' + e.message)
+      setErroTraducao('Erro de conexão. Verifique sua internet e tente novamente.')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
-  const usoRestante = usageCount !== null ? Math.max(0, FREE_LIMIT - usageCount) : null
+  const usoRestante = Math.max(0, FREE_LIMIT - usageCount)
+  const limiteAtingido = !isPremium && usageCount >= FREE_LIMIT
+  const linkWhatsapp = `https://wa.me/${WHATSAPP_SUPORTE}?text=${encodeURIComponent('Olá! Quero assinar o plano Premium do LaudoClaro.')}`
 
   return (
     <main style={{
@@ -120,7 +281,11 @@ export default function Home() {
           <span style={{ fontSize: '1.2rem', fontWeight: '700', color: '#2c3e6b' }}>LaudoClaro</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          {!isPremium && usageCount !== null && (
+          {isPremium ? (
+            <span style={{ fontSize: '0.8rem', color: '#27ae60', background: '#eafaf1', padding: '4px 10px', borderRadius: '20px' }}>
+              ✓ Premium
+            </span>
+          ) : (
             <span style={{
               fontSize: '0.8rem',
               color: usoRestante === 0 ? '#e74c3c' : '#6b7a99',
@@ -128,12 +293,7 @@ export default function Home() {
               padding: '4px 10px',
               borderRadius: '20px'
             }}>
-              {usoRestante === 0 ? '⚠️ Limite atingido' : `${usoRestante} traduções restantes`}
-            </span>
-          )}
-          {isPremium && (
-            <span style={{ fontSize: '0.8rem', color: '#27ae60', background: '#eafaf1', padding: '4px 10px', borderRadius: '20px' }}>
-              ✓ Premium
+              {usoRestante === 0 ? '⚠️ Limite atingido' : `${usoRestante} de ${FREE_LIMIT} traduções gratuitas`}
             </span>
           )}
           <UserButton afterSignOutUrl="/sign-in" />
@@ -141,7 +301,7 @@ export default function Home() {
       </header>
 
       <div style={{ display: 'flex', minHeight: 'calc(100vh - 57px)' }}>
-        {/* Sidebar - histórico */}
+        {/* Sidebar histórico */}
         {historico.length > 0 && (
           <aside style={{
             width: '260px',
@@ -157,7 +317,7 @@ export default function Home() {
             {historico.map(item => (
               <button
                 key={item.id}
-                onClick={() => { setItemSelecionado(item); setTraducao(''); setLaudo('') }}
+                onClick={() => { setItemSelecionado(item); setTraducao(''); setLaudo(''); setErroTraducao('') }}
                 style={{
                   width: '100%',
                   textAlign: 'left',
@@ -179,47 +339,53 @@ export default function Home() {
         {/* Conteúdo principal */}
         <div style={{ flex: 1, padding: '40px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
 
-          {/* Cabeçalho da página */}
           <div style={{ textAlign: 'center', marginBottom: '32px', maxWidth: '560px' }}>
             <h1 style={{ fontSize: '1.8rem', fontWeight: '700', color: '#2c3e6b', margin: '0 0 8px 0' }}>
               Entenda seu laudo médico
             </h1>
             <p style={{ color: '#6b7a99', fontSize: '1rem', margin: 0 }}>
-              Cole o texto de qualquer laudo — ressonância, tomografia, ultrassom, raio-x e mais — e receba uma explicação em linguagem simples.
+              Cole o texto de qualquer laudo — ressonância, tomografia, ultrassom, raio-x, exames laboratoriais e mais.
             </p>
           </div>
 
-          {/* Aviso de limite */}
+          {/* Paywall */}
           {limiteAtingido && (
             <div style={{
-              width: '100%', maxWidth: '580px', marginBottom: '20px',
-              background: '#fff8e1', border: '1.5px solid #f9ca24',
-              borderRadius: '16px', padding: '20px 24px', textAlign: 'center'
+              width: '100%', maxWidth: '580px', marginBottom: '24px',
+              background: 'linear-gradient(135deg, #fff8e1, #fffde7)',
+              border: '1.5px solid #f9ca24',
+              borderRadius: '20px', padding: '28px', textAlign: 'center'
             }}>
-              <div style={{ fontSize: '1.5rem', marginBottom: '8px' }}>⭐</div>
-              <h3 style={{ color: '#b8860b', margin: '0 0 8px', fontSize: '1rem' }}>Você usou suas 3 traduções gratuitas</h3>
-              <p style={{ color: '#8a6914', fontSize: '0.9rem', margin: '0 0 16px' }}>
-                Para continuar usando o LaudoClaro sem limites, entre em contato para ativar o plano premium.
+              <div style={{ fontSize: '2rem', marginBottom: '10px' }}>⭐</div>
+              <h3 style={{ color: '#b8860b', margin: '0 0 8px', fontSize: '1.1rem' }}>
+                Você usou suas {FREE_LIMIT} traduções gratuitas
+              </h3>
+              <p style={{ color: '#8a6914', fontSize: '0.9rem', margin: '0 0 20px', lineHeight: '1.6' }}>
+                Para continuar usando o LaudoClaro sem limites, fale com a gente no WhatsApp e ative o plano premium.
               </p>
               <a
-                href="mailto:contato@laudoclaro.com.br?subject=Quero o plano Premium"
+                href={linkWhatsapp}
+                target="_blank"
+                rel="noopener noreferrer"
                 style={{
-                  display: 'inline-block',
-                  padding: '10px 24px',
-                  background: '#f9ca24',
-                  color: '#5a4000',
-                  borderRadius: '10px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '12px 28px',
+                  background: '#25d366',
+                  color: 'white',
+                  borderRadius: '12px',
                   fontWeight: '700',
                   textDecoration: 'none',
-                  fontSize: '0.9rem'
+                  fontSize: '1rem'
                 }}
               >
-                Quero o plano Premium
+                💬 Falar no WhatsApp
               </a>
             </div>
           )}
 
-          {/* Visualização do histórico selecionado */}
+          {/* Histórico selecionado */}
           {itemSelecionado && (
             <div style={{ width: '100%', maxWidth: '580px', marginBottom: '20px' }}>
               <button
@@ -241,7 +407,7 @@ export default function Home() {
             </div>
           )}
 
-          {/* Formulário principal */}
+          {/* Formulário de tradução */}
           {!itemSelecionado && (
             <>
               <div style={{
@@ -255,24 +421,26 @@ export default function Home() {
                 <textarea
                   value={laudo}
                   onChange={e => setLaudo(e.target.value)}
-                  placeholder="Ex: Discreta protrusão discal central em L4-L5, redução do sinal em T2 compatível com desidratação discal..."
+                  placeholder="Ex: Hemograma completo — Hemácias: 4,5 M/µL | Leucócitos: 8.200/µL..."
                   rows={8}
+                  disabled={limiteAtingido}
                   style={{
                     width: '100%', padding: '14px', borderRadius: '12px',
                     border: '1.5px solid #d8e4f0', fontSize: '0.95rem',
                     color: '#2c3e6b', resize: 'vertical', outline: 'none',
-                    boxSizing: 'border-box', lineHeight: '1.6'
+                    boxSizing: 'border-box', lineHeight: '1.6',
+                    background: limiteAtingido ? '#f8f9fb' : 'white'
                   }}
                 />
                 <button
                   onClick={traduzir}
-                  disabled={loading || limiteAtingido}
+                  disabled={loading || limiteAtingido || !laudo.trim()}
                   style={{
                     width: '100%', marginTop: '16px', padding: '14px',
                     borderRadius: '12px', border: 'none',
-                    background: (loading || limiteAtingido) ? '#b0c8e8' : 'linear-gradient(135deg, #6c9bd2, #4a7abf)',
+                    background: (loading || limiteAtingido || !laudo.trim()) ? '#b0c8e8' : 'linear-gradient(135deg, #6c9bd2, #4a7abf)',
                     color: 'white', fontSize: '1rem', fontWeight: '600',
-                    cursor: (loading || limiteAtingido) ? 'not-allowed' : 'pointer',
+                    cursor: (loading || limiteAtingido || !laudo.trim()) ? 'not-allowed' : 'pointer',
                     transition: 'all 0.2s', letterSpacing: '0.3px'
                   }}
                 >
@@ -280,6 +448,19 @@ export default function Home() {
                 </button>
               </div>
 
+              {/* Erro */}
+              {erroTraducao && erroTraducao !== 'limite_atingido' && (
+                <div style={{
+                  width: '100%', maxWidth: '580px', marginBottom: '20px',
+                  background: '#fdecea', border: '1px solid #f5c6cb',
+                  borderRadius: '12px', padding: '16px',
+                  color: '#c0392b', fontSize: '0.9rem'
+                }}>
+                  ⚠️ {erroTraducao}
+                </div>
+              )}
+
+              {/* Resultado */}
               {traducao && (
                 <div style={{
                   width: '100%', maxWidth: '580px',
