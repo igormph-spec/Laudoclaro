@@ -1,9 +1,26 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { ClerkProvider } from '@clerk/nextjs'
 
 export const metadata: Metadata = {
   title: 'LaudoClaro',
   description: 'Entenda qualquer laudo médico em linguagem simples',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'LaudoClaro',
+  },
+  icons: {
+    icon: '/icon.svg',
+    apple: '/icon.svg',
+  },
+}
+
+export const viewport: Viewport = {
+  themeColor: '#4a7abf',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
 }
 
 const clerkAppearance = {
