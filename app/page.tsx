@@ -207,7 +207,7 @@ export default function Home() {
 
   if (!isLoaded || !isSignedIn || !perfilCarregado) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #f5f0ff 0%, #e8f4fd 100%)' }}>
+      <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #f5f0ff 0%, #e8f4fd 100%)' }}>
         <div style={{ textAlign: 'center', color: '#6b7a99' }}>
           <div style={{ fontSize: '2rem', marginBottom: '12px' }}>🩺</div>
           <p>Carregando...</p>
@@ -219,7 +219,7 @@ export default function Home() {
   if (!whatsappSalvo) {
     return (
       <main style={{
-        minHeight: '100vh',
+        minHeight: '100dvh',
         background: 'linear-gradient(135deg, #f5f0ff 0%, #e8f4fd 100%)',
         display: 'flex',
         alignItems: 'center',
@@ -352,7 +352,7 @@ export default function Home() {
 
   return (
     <main style={{
-      minHeight: '100vh',
+      minHeight: '100dvh',
       background: 'linear-gradient(135deg, #f5f0ff 0%, #e8f4fd 100%)',
       fontFamily: "'Segoe UI', system-ui, sans-serif"
     }}>
@@ -389,7 +389,7 @@ export default function Home() {
         </div>
       </header>
 
-      <div style={{ display: 'flex', minHeight: 'calc(100vh - 57px)' }}>
+      <div style={{ display: 'flex', minHeight: 'calc(100dvh - 57px)' }}>
         {/* Sidebar histórico */}
         {historico.length > 0 && (
           <aside style={{

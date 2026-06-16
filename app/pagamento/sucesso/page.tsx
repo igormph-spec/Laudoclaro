@@ -52,7 +52,7 @@ function ConteudoSucesso() {
 export default function PagamentoSucesso() {
   return (
     <main style={{
-      minHeight: '100vh',
+      minHeight: '100dvh',
       background: 'linear-gradient(135deg, #f5f0ff 0%, #e8f4fd 100%)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: '24px', fontFamily: "'Segoe UI', system-ui, sans-serif"

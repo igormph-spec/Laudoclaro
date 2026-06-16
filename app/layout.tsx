@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { ClerkProvider } from '@clerk/nextjs'
+import './globals.css'
 
 export const metadata: Metadata = {
   title: 'LaudoClaro',
@@ -20,7 +21,6 @@ export const viewport: Viewport = {
   themeColor: '#4a7abf',
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
 }
 
 const clerkAppearance = {
