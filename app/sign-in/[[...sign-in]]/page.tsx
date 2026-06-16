@@ -27,8 +27,8 @@ export default function SignInPage() {
   const router = useRouter()
 
   useEffect(() => {
-    if (isSignedIn) router.push('/')
-  }, [isSignedIn, router])
+    if (isSignedIn) window.location.href = '/'
+  }, [isSignedIn])
 
   const [etapa, setEtapa] = useState<Etapa>('login')
 
@@ -55,14 +55,14 @@ export default function SignInPage() {
       const result = await signIn.create({ identifier: email, password: senha })
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId })
-        router.push('/')
+        window.location.href = '/'
       }
     } catch (err: any) {
       const code = err?.errors?.[0]?.code
       if (code === 'form_password_incorrect') setErro('Senha incorreta. Use "Esqueci a senha" para redefinir.')
       else if (code === 'form_identifier_not_found') setErro('E-mail não encontrado. Verifique ou cadastre-se.')
       else if (code === 'too_many_requests') setErro('Muitas tentativas. Aguarde alguns minutos.')
-      else if (code === 'session_exists') router.push('/')
+      else if (code === 'session_exists') window.location.href = '/'
       else setErro(err?.errors?.[0]?.message || 'Erro ao entrar. Verifique seus dados.')
     }
     setLoading(false)
@@ -106,7 +106,7 @@ export default function SignInPage() {
       })
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId })
-        router.push('/')
+        window.location.href = '/'
       }
     } catch (err: any) {
       const code = err?.errors?.[0]?.code

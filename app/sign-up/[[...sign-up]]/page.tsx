@@ -44,7 +44,7 @@ export default function SignUpPage() {
       const result = await signUp.attemptEmailAddressVerification({ code: codigo })
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId })
-        router.push('/')
+        window.location.href = '/'
       }
     } catch (err: any) {
       const msg = err?.errors?.[0]?.code
