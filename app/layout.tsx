@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { ClerkProvider } from '@clerk/nextjs'
+import PWASetup from './components/PWASetup'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -44,7 +45,10 @@ export default function RootLayout({
   return (
     <ClerkProvider appearance={clerkAppearance}>
       <html lang="pt-BR">
-        <body>{children}</body>
+        <body>
+          {children}
+          <PWASetup />
+        </body>
       </html>
     </ClerkProvider>
   )
