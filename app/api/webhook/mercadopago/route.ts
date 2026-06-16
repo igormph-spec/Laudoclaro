@@ -1,5 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { clerkClient } from '@clerk/nextjs/server'
+import { createHmac } from 'crypto'
+
+function validarAssinaturaMP(request: NextRequest, body: string): boolean {
+  const secret = process.env.MP_WEBHOOK_SECRET
+  // Se não houver secret configurado, passa (compatibilidade)
+  if (!secret) return true
+
+  const xSignature = request.headers.get('x-signature') ?? ''
+  const xRequestId = request.headers.get('x-request-id') ?? ''
+  const dataId = new URL(request.url).searchParams.get('data.id') ?? ''
+
+  // Formato: ts=...,v1=...
+  const parts = Object.fromEntries(xSignature.split(',').map(p => p.split('=')))
+  const ts = parts['ts']
+  const v1 = parts['v1']
+  if (!ts || !v1) return false
+
+  const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`
+  const hmac = createHmac('sha256', secret).update(manifest).digest('hex')
+  return hmac === v1
+}
 
 const CREDITOS_PLANO: Record<string, number> = {
   starter: 5,
@@ -69,7 +90,11 @@ async function atualizarStatusAssinatura(assinaturaId: string, status: string) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const rawBody = await request.text()
+    if (!validarAssinaturaMP(request, rawBody)) {
+      return NextResponse.json({ erro: 'Assinatura inválida' }, { status: 401 })
+    }
+    const body = JSON.parse(rawBody)
 
     // Pagamento avulso (modelo antigo — mantido para compatibilidade)
     if (body.type === 'payment') {

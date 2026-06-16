@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
           transaction_amount: planoData.preco,
           currency_id: 'BRL'
         },
-        back_url: `${baseUrl}/pagamento/sucesso`,
+        back_url: `${baseUrl}/pagamento/sucesso?plano=${plano}`,
         external_reference: `${userId}|${plano}`,
         payer_email: email,
         status: 'pending'
