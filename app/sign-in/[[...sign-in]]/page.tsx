@@ -1,7 +1,7 @@
 'use client'
 
-import { useSignIn } from '@clerk/nextjs'
-import { useState } from 'react'
+import { useSignIn, useAuth } from '@clerk/nextjs'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -23,7 +23,12 @@ const btnPrimario = (disabled: boolean) => ({
 
 export default function SignInPage() {
   const { isLoaded, signIn, setActive } = useSignIn()
+  const { isSignedIn } = useAuth()
   const router = useRouter()
+
+  useEffect(() => {
+    if (isSignedIn) router.push('/')
+  }, [isSignedIn, router])
 
   const [etapa, setEtapa] = useState<Etapa>('login')
 
@@ -57,6 +62,7 @@ export default function SignInPage() {
       if (code === 'form_password_incorrect') setErro('Senha incorreta. Use "Esqueci a senha" para redefinir.')
       else if (code === 'form_identifier_not_found') setErro('E-mail não encontrado. Verifique ou cadastre-se.')
       else if (code === 'too_many_requests') setErro('Muitas tentativas. Aguarde alguns minutos.')
+      else if (code === 'session_exists') router.push('/')
       else setErro(err?.errors?.[0]?.message || 'Erro ao entrar. Verifique seus dados.')
     }
     setLoading(false)
