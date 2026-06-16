@@ -15,13 +15,18 @@ export async function GET() {
       credits?: number
       isPremium?: boolean
       whatsapp?: string
+      plano?: string
+      assinaturaId?: string
+      assinaturaStatus?: string
     }
 
     return NextResponse.json({
       usageCount: meta.usageCount ?? 0,
       credits: meta.credits ?? 0,
       isPremium: meta.isPremium ?? false,
-      whatsapp: meta.whatsapp ?? null
+      whatsapp: meta.whatsapp ?? null,
+      plano: meta.plano ?? null,
+      assinaturaStatus: meta.assinaturaStatus ?? null,
     })
   } catch (e: any) {
     return NextResponse.json({ erro: e.message }, { status: 500 })

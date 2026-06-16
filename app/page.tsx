@@ -62,6 +62,11 @@ export default function Home() {
 
   // Pagamento
   const [iniciandoPagamento, setIniciandoPagamento] = useState(false)
+  const [planoSelecionado, setPlanoSelecionado] = useState<string | null>(null)
+
+  // Assinatura
+  const [plano, setPlano] = useState<string | null>(null)
+  const [assinaturaStatus, setAssinaturaStatus] = useState<string | null>(null)
 
   // Histórico
   const [historico, setHistorico] = useState<HistoricoItem[]>([])
@@ -80,6 +85,8 @@ export default function Home() {
       setCredits(data.credits ?? 0)
       setIsPremium(data.isPremium ?? false)
       setWhatsappSalvo(data.whatsapp ?? null)
+      setPlano(data.plano ?? null)
+      setAssinaturaStatus(data.assinaturaStatus ?? null)
     } finally {
       setPerfilCarregado(true)
     }
@@ -232,20 +239,26 @@ export default function Home() {
     }
   }
 
-  async function comprar() {
+  async function assinar(planoId: string) {
+    setPlanoSelecionado(planoId)
     setIniciandoPagamento(true)
     try {
-      const res = await fetch('/api/criar-pagamento', { method: 'POST' })
+      const res = await fetch('/api/criar-assinatura', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plano: planoId })
+      })
       const data = await res.json()
       if (data.url) {
         window.location.href = data.url
       } else {
-        alert('Erro ao iniciar pagamento. Tente novamente.')
+        alert('Erro ao iniciar assinatura. Tente novamente.')
       }
     } catch {
       alert('Erro de conexão. Tente novamente.')
     } finally {
       setIniciandoPagamento(false)
+      setPlanoSelecionado(null)
     }
   }
 
@@ -272,9 +285,10 @@ export default function Home() {
           <span style={{ fontSize: '1.2rem', fontWeight: '700', color: '#2c3e6b' }}>LaudoClaro</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          {isPremium ? (
+          {assinaturaStatus === 'authorized' ? (
             <span style={{ fontSize: '0.8rem', color: '#27ae60', background: '#eafaf1', padding: '4px 10px', borderRadius: '20px' }}>
-              ✓ Premium
+              ✓ Plano {plano === 'starter' ? 'Starter' : plano === 'familia' ? 'Família' : 'Premium'}
+              {!isPremium && ` · ${credits} laudo${credits !== 1 ? 's' : ''}`}
             </span>
           ) : (
             <span style={{
@@ -330,44 +344,79 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Paywall */}
+          {/* Paywall — planos de assinatura */}
           {(semCreditos || erroTraducao === 'sem_creditos') && (
             <div style={{
-              width: '100%', maxWidth: '580px', marginBottom: '24px',
+              width: '100%', maxWidth: '680px', marginBottom: '24px',
               background: 'white', border: '1.5px solid #e8edf5',
-              borderRadius: '20px', padding: '32px', textAlign: 'center',
+              borderRadius: '20px', padding: '32px',
               boxShadow: '0 4px 24px rgba(108,155,210,0.12)'
             }}>
-              <div style={{ fontSize: '2rem', marginBottom: '12px' }}>🩺</div>
-              <h3 style={{ color: '#2c3e6b', margin: '0 0 8px', fontSize: '1.15rem', fontWeight: '700' }}>
-                Continue usando o LaudoClaro
-              </h3>
-              <p style={{ color: '#6b7a99', fontSize: '0.9rem', margin: '0 0 8px', lineHeight: '1.6' }}>
-                Você usou seu laudo gratuito. Para continuar, adquira um pacote de créditos.
-              </p>
-              <div style={{
-                background: 'linear-gradient(135deg, #f5f0ff, #e8f4fd)',
-                borderRadius: '14px', padding: '20px', margin: '20px 0'
-              }}>
-                <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#2c3e6b', marginBottom: '4px' }}>
-                  R$ 39,90
-                </div>
-                <div style={{ color: '#6b7a99', fontSize: '0.9rem' }}>20 laudos · sem prazo de validade</div>
+              <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+                <div style={{ fontSize: '2rem', marginBottom: '10px' }}>🩺</div>
+                <h3 style={{ color: '#2c3e6b', margin: '0 0 8px', fontSize: '1.15rem', fontWeight: '700' }}>
+                  Escolha seu plano
+                </h3>
+                <p style={{ color: '#6b7a99', fontSize: '0.88rem', margin: 0, lineHeight: '1.6' }}>
+                  Você usou seu laudo gratuito. Assine e continue entendendo seus exames toda semana.
+                </p>
               </div>
-              <button
-                onClick={comprar}
-                disabled={iniciandoPagamento}
-                style={{
-                  width: '100%', padding: '14px', borderRadius: '12px', border: 'none',
-                  background: iniciandoPagamento ? '#b0c8e8' : 'linear-gradient(135deg, #6c9bd2, #4a7abf)',
-                  color: 'white', fontSize: '1rem', fontWeight: '700',
-                  cursor: iniciandoPagamento ? 'not-allowed' : 'pointer'
-                }}
-              >
-                {iniciandoPagamento ? '⏳ Redirecionando...' : '💳 Comprar 20 laudos'}
-              </button>
-              <p style={{ color: '#b0b8cc', fontSize: '0.75rem', marginTop: '12px' }}>
-                Pagamento seguro via Mercado Pago · PIX, cartão ou boleto
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '20px' }}>
+                {/* Plano Starter */}
+                {(['starter', 'familia', 'premium'] as const).map((planoId) => {
+                  const info = {
+                    starter: { emoji: '🔰', nome: 'Starter', preco: 'R$ 19,90', periodo: '/mês', laudos: '5 laudos/mês', desc: 'Para uso eventual', destaque: false },
+                    familia: { emoji: '👨‍👩‍👧', nome: 'Família', preco: 'R$ 39,90', periodo: '/mês', laudos: '20 laudos/mês', desc: 'O mais popular · 3 perfis', destaque: true },
+                    premium: { emoji: '🏆', nome: 'Premium', preco: 'R$ 79,90', periodo: '/mês', laudos: 'Ilimitado', desc: 'Laudos sem limite + 5 perfis', destaque: false },
+                  }[planoId]
+                  const carregando = iniciandoPagamento && planoSelecionado === planoId
+                  return (
+                    <div key={planoId} style={{
+                      border: info.destaque ? '2px solid #6c9bd2' : '1.5px solid #e0e8f5',
+                      borderRadius: '16px', padding: '20px', textAlign: 'center',
+                      position: 'relative', background: info.destaque ? '#f5f9ff' : 'white'
+                    }}>
+                      {info.destaque && (
+                        <div style={{
+                          position: 'absolute', top: '-11px', left: '50%', transform: 'translateX(-50%)',
+                          background: '#6c9bd2', color: 'white', fontSize: '10px', fontWeight: '800',
+                          padding: '3px 12px', borderRadius: '20px', whiteSpace: 'nowrap'
+                        }}>
+                          ⭐ MAIS POPULAR
+                        </div>
+                      )}
+                      <div style={{ fontSize: '1.6rem', marginBottom: '6px' }}>{info.emoji}</div>
+                      <div style={{ fontWeight: '800', color: '#2c3e6b', fontSize: '0.95rem', marginBottom: '4px' }}>{info.nome}</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#2c3e6b' }}>
+                        {info.preco}<span style={{ fontSize: '0.75rem', fontWeight: '500', color: '#9aa3b8' }}>{info.periodo}</span>
+                      </div>
+                      <div style={{ color: '#6b7a99', fontSize: '0.8rem', margin: '8px 0 4px' }}>{info.laudos}</div>
+                      <div style={{ color: '#9aa3b8', fontSize: '0.75rem', marginBottom: '14px' }}>{info.desc}</div>
+                      <button
+                        onClick={() => assinar(planoId)}
+                        disabled={iniciandoPagamento}
+                        style={{
+                          width: '100%', padding: '10px', borderRadius: '10px', border: 'none',
+                          background: iniciandoPagamento
+                            ? '#b0c8e8'
+                            : info.destaque
+                              ? 'linear-gradient(135deg, #6c9bd2, #4a7abf)'
+                              : '#eef3fb',
+                          color: info.destaque && !iniciandoPagamento ? 'white' : '#4a7abf',
+                          fontSize: '0.85rem', fontWeight: '700',
+                          cursor: iniciandoPagamento ? 'not-allowed' : 'pointer'
+                        }}
+                      >
+                        {carregando ? '⏳ Aguarde...' : 'Assinar'}
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+
+              <p style={{ color: '#b0b8cc', fontSize: '0.72rem', textAlign: 'center', margin: 0 }}>
+                Pagamento seguro via Mercado Pago · PIX, cartão ou boleto · Cancele quando quiser
               </p>
             </div>
           )}
