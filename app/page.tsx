@@ -423,7 +423,7 @@ export default function Home() {
     setPlanoSelecionado(planoId)
     setIniciandoPagamento(true)
     try {
-      const res = await fetch('/api/criar-assinatura', {
+      const res = await fetch('/api/criar-pagamento', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plano: planoId })
@@ -548,9 +548,9 @@ export default function Home() {
                 {/* Plano Starter */}
                 {(['starter', 'familia', 'premium'] as const).map((planoId) => {
                   const info = {
-                    starter: { emoji: '🔰', nome: 'Starter', preco: 'R$ 19,90', periodo: '/mês', laudos: '5 laudos/mês', desc: 'Para uso eventual', destaque: false },
-                    familia: { emoji: '👨‍👩‍👧', nome: 'Família', preco: 'R$ 39,90', periodo: '/mês', laudos: '20 laudos/mês', desc: 'O mais popular · 3 perfis', destaque: true },
-                    premium: { emoji: '🏆', nome: 'Premium', preco: 'R$ 79,90', periodo: '/mês', laudos: 'Ilimitado', desc: 'Laudos sem limite + 5 perfis', destaque: false },
+                    starter: { emoji: '🔰', nome: 'Starter', preco: 'R$ 19,90', periodo: '', laudos: '5 laudos', desc: 'Para uso eventual', destaque: false },
+                    familia: { emoji: '👨‍👩‍👧', nome: 'Família', preco: 'R$ 39,90', periodo: '', laudos: '20 laudos', desc: 'O mais popular', destaque: true },
+                    premium: { emoji: '🏆', nome: 'Premium', preco: 'R$ 79,90', periodo: '', laudos: '60 laudos', desc: 'Para uso frequente', destaque: false },
                   }[planoId]
                   const carregando = iniciandoPagamento && planoSelecionado === planoId
                   return (
@@ -590,7 +590,7 @@ export default function Home() {
                           cursor: iniciandoPagamento ? 'not-allowed' : 'pointer'
                         }}
                       >
-                        {carregando ? '⏳ Aguarde...' : 'Assinar'}
+                        {carregando ? '⏳ Aguarde...' : 'Comprar'}
                       </button>
                     </div>
                   )
@@ -598,7 +598,7 @@ export default function Home() {
               </div>
 
               <p style={{ color: '#b0b8cc', fontSize: '0.72rem', textAlign: 'center', margin: 0 }}>
-                Pagamento seguro via Mercado Pago · PIX, cartão ou boleto · Cancele quando quiser
+                Pagamento seguro via Mercado Pago · PIX, cartão de crédito ou boleto
               </p>
             </div>
           )}

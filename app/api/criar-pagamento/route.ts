@@ -1,18 +1,24 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 
-const PLANO = {
-  titulo: 'LaudoClaro — 20 laudos médicos',
-  preco: 39.90,
-  creditos: 20
+const PLANOS = {
+  starter:  { titulo: 'LaudoClaro — Plano Starter (5 laudos)',    preco: 19.90, creditos: 5  },
+  familia:  { titulo: 'LaudoClaro — Plano Família (20 laudos)',   preco: 39.90, creditos: 20 },
+  premium:  { titulo: 'LaudoClaro — Plano Premium (60 laudos)',   preco: 79.90, creditos: 60 },
 }
 
-export async function POST() {
+export type PlanoId = keyof typeof PLANOS
+
+export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth()
     if (!userId) {
       return NextResponse.json({ erro: 'Não autenticado' }, { status: 401 })
     }
+
+    const body = await request.json().catch(() => ({}))
+    const planoId: PlanoId = body.plano && body.plano in PLANOS ? body.plano : 'familia'
+    const plano = PLANOS[planoId]
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://laudoclaro1.vercel.app'
 
@@ -24,14 +30,14 @@ export async function POST() {
       },
       body: JSON.stringify({
         items: [{
-          title: PLANO.titulo,
+          title: plano.titulo,
           quantity: 1,
-          unit_price: PLANO.preco,
+          unit_price: plano.preco,
           currency_id: 'BRL'
         }],
-        external_reference: userId,
+        external_reference: `${userId}|${planoId}`,
         back_urls: {
-          success: `${baseUrl}/pagamento/sucesso`,
+          success: `${baseUrl}/pagamento/sucesso?plano=${planoId}`,
           failure: `${baseUrl}`,
           pending: `${baseUrl}/pagamento/pendente`
         },
@@ -43,6 +49,7 @@ export async function POST() {
     const data = await res.json()
 
     if (!res.ok) {
+      console.error('[criar-pagamento] Erro MP:', res.status, JSON.stringify(data))
       return NextResponse.json({ erro: JSON.stringify(data) }, { status: 500 })
     }
 

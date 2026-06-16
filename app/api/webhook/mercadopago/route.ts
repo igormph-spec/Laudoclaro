@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
     }
     const body = JSON.parse(rawBody)
 
-    // Pagamento avulso (modelo antigo — mantido para compatibilidade)
+    // Pagamento único via Checkout Pro
     if (body.type === 'payment') {
       const paymentId = body.data?.id
       if (!paymentId) return NextResponse.json({ ok: true })
@@ -109,8 +109,13 @@ export async function POST(request: NextRequest) {
       const payment = await res.json()
       if (payment.status !== 'approved') return NextResponse.json({ ok: true })
 
-      const userId = payment.external_reference
+      // external_reference pode ser "userId|plano" ou somente "userId" (legado)
+      const extRef: string = payment.external_reference ?? ''
+      const [userId, planoId] = extRef.includes('|') ? extRef.split('|') : [extRef, 'familia']
       if (!userId) return NextResponse.json({ erro: 'Usuário não identificado' }, { status: 400 })
+
+      const creditosPorPlano: Record<string, number> = { starter: 5, familia: 20, premium: 60 }
+      const creditosAdicionados = creditosPorPlano[planoId] ?? 20
 
       const client = await clerkClient()
       const user = await client.users.getUser(userId)
@@ -118,7 +123,12 @@ export async function POST(request: NextRequest) {
       const creditsAtuais = meta.credits ?? 0
 
       await client.users.updateUserMetadata(userId, {
-        publicMetadata: { ...meta, credits: creditsAtuais + 20 }
+        publicMetadata: {
+          ...meta,
+          credits: creditsAtuais + creditosAdicionados,
+          plano: planoId,
+          assinaturaStatus: 'authorized',
+        }
       })
 
       return NextResponse.json({ ok: true })
