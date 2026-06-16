@@ -1,24 +1,62 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#6c9bd2"/>
-      <stop offset="100%" style="stop-color:#4a7abf"/>
+      <stop offset="0%" stop-color="#5b8fd4"/>
+      <stop offset="100%" stop-color="#2f5fa8"/>
     </linearGradient>
+    <linearGradient id="docgrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e8f0fb"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#1a3a7a" flood-opacity="0.25"/>
+    </filter>
   </defs>
-  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-  <!-- Estetoscópio simplificado -->
-  <!-- Cabeça do estetoscópio -->
-  <circle cx="256" cy="310" r="52" fill="none" stroke="white" stroke-width="22"/>
-  <!-- Tubo esquerdo -->
-  <path d="M204 310 Q150 310 150 240 L150 190" fill="none" stroke="white" stroke-width="22" stroke-linecap="round"/>
-  <!-- Tubo direito -->
-  <path d="M308 310 Q362 310 362 240 L362 190" fill="none" stroke="white" stroke-width="22" stroke-linecap="round"/>
-  <!-- Auriculares -->
-  <circle cx="150" cy="175" r="20" fill="white"/>
-  <circle cx="362" cy="175" r="20" fill="white"/>
-  <!-- Centro da cabeça -->
-  <circle cx="256" cy="310" r="20" fill="white"/>
-  <!-- Cruz médica pequena -->
-  <rect x="242" y="120" width="28" height="80" rx="8" fill="white"/>
-  <rect x="222" y="140" width="68" height="28" rx="8" fill="white"/>
+
+  <!-- Fundo arredondado -->
+  <rect width="512" height="512" rx="108" fill="url(#bg)"/>
+
+  <!-- Documento principal -->
+  <g filter="url(#shadow)">
+    <path d="M 138 44 L 296 44 L 350 98 L 350 300 Q 350 316 334 316 L 154 316 Q 138 316 138 300 Z"
+          fill="url(#docgrad)"/>
+    <!-- Dobra do canto superior direito -->
+    <path d="M 296 44 L 296 98 L 350 98 Z" fill="#c5d8f0"/>
+    <!-- Linha decorativa na dobra -->
+    <line x1="296" y1="98" x2="350" y2="98" stroke="#a8c4e8" stroke-width="1.5"/>
+  </g>
+
+  <!-- Linhas do laudo (texto simulado) -->
+  <line x1="172" y1="148" x2="312" y2="148" stroke="#b0c8e8" stroke-width="11" stroke-linecap="round"/>
+  <line x1="172" y1="178" x2="312" y2="178" stroke="#b0c8e8" stroke-width="11" stroke-linecap="round"/>
+  <line x1="172" y1="208" x2="270" y2="208" stroke="#b0c8e8" stroke-width="11" stroke-linecap="round"/>
+  <line x1="172" y1="238" x2="298" y2="238" stroke="#b0c8e8" stroke-width="11" stroke-linecap="round"/>
+  <line x1="172" y1="268" x2="240" y2="268" stroke="#b0c8e8" stroke-width="11" stroke-linecap="round"/>
+
+  <!-- Lupa (lente) -->
+  <circle cx="322" cy="288" r="72" fill="#3a6ab8" opacity="0.95" filter="url(#shadow)"/>
+  <circle cx="322" cy="288" r="72" fill="none" stroke="white" stroke-width="16"/>
+  <circle cx="322" cy="288" r="50" fill="rgba(255,255,255,0.12)"/>
+
+  <!-- Check dentro da lupa — representa "claro/entendido" -->
+  <polyline points="298,288 314,308 350,264"
+            fill="none" stroke="white" stroke-width="16"
+            stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Cabo da lupa -->
+  <line x1="374" y1="340" x2="418" y2="386"
+        stroke="white" stroke-width="24" stroke-linecap="round"/>
+
+  <!-- Texto LaudoClaro -->
+  <text x="256" y="444"
+        text-anchor="middle"
+        font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
+        font-size="56"
+        font-weight="800"
+        fill="white"
+        letter-spacing="-1.5"
+        opacity="0.97">LaudoClaro</text>
+
+  <!-- Sublinhado decorativo -->
+  <rect x="156" y="458" width="200" height="5" rx="2.5" fill="white" opacity="0.35"/>
 </svg>
