@@ -337,7 +337,7 @@ export default function Home() {
       if (data.url) {
         window.location.href = data.url
       } else {
-        alert('Erro ao iniciar assinatura. Tente novamente.')
+        alert('Erro ao iniciar assinatura:\n\n' + (data.erro || 'Resposta inesperada do servidor'))
       }
     } catch {
       alert('Erro de conexão. Tente novamente.')

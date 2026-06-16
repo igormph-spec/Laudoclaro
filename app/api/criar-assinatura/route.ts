@@ -67,7 +67,13 @@ export async function POST(request: NextRequest) {
     const data = await res.json()
 
     if (!res.ok) {
-      return NextResponse.json({ erro: JSON.stringify(data) }, { status: 500 })
+      console.error('[criar-assinatura] Erro MP:', res.status, JSON.stringify(data))
+      return NextResponse.json({ erro: `MP ${res.status}: ${JSON.stringify(data)}` }, { status: 500 })
+    }
+
+    if (!data.init_point) {
+      console.error('[criar-assinatura] init_point ausente:', JSON.stringify(data))
+      return NextResponse.json({ erro: `init_point ausente: ${JSON.stringify(data)}` }, { status: 500 })
     }
 
     return NextResponse.json({ url: data.init_point })
