@@ -45,6 +45,12 @@ export default function SignInPage() {
   const [erro, setErro] = useState('')
   const [sucesso, setSucesso] = useState('')
   const [loading, setLoading] = useState(false)
+  const [loginOk, setLoginOk] = useState(false)
+
+  async function redirecionar() {
+    await router.refresh()
+    router.push('/')
+  }
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -55,14 +61,16 @@ export default function SignInPage() {
       const result = await signIn.create({ identifier: email, password: senha })
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId })
-        window.location.href = '/'
+        setLoginOk(true)
+        await redirecionar()
+        return
       }
     } catch (err: any) {
       const code = err?.errors?.[0]?.code
       if (code === 'form_password_incorrect') setErro('Senha incorreta. Use "Esqueci a senha" para redefinir.')
       else if (code === 'form_identifier_not_found') setErro('E-mail não encontrado. Verifique ou cadastre-se.')
       else if (code === 'too_many_requests') setErro('Muitas tentativas. Aguarde alguns minutos.')
-      else if (code === 'session_exists') window.location.href = '/'
+      else if (code === 'session_exists') { setLoginOk(true); await redirecionar(); return }
       else setErro(err?.errors?.[0]?.message || 'Erro ao entrar. Verifique seus dados.')
     }
     setLoading(false)
@@ -106,7 +114,9 @@ export default function SignInPage() {
       })
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId })
-        window.location.href = '/'
+        setLoginOk(true)
+        await redirecionar()
+        return
       }
     } catch (err: any) {
       const code = err?.errors?.[0]?.code
@@ -153,8 +163,29 @@ export default function SignInPage() {
         boxShadow: '0 4px 24px rgba(108,155,210,0.15)'
       }}>
 
+        {/* ── LOGIN OK — redirecionando ── */}
+        {loginOk && (
+          <div style={{ textAlign: 'center', padding: '12px 0' }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '14px' }}>✅</div>
+            <p style={{ color: '#1e8449', fontWeight: '700', fontSize: '1rem', marginBottom: '8px' }}>
+              Login realizado com sucesso!
+            </p>
+            <p style={{ color: '#6b7a99', fontSize: '0.88rem', marginBottom: '20px' }}>
+              Redirecionando...
+            </p>
+            <a href="/" style={{
+              display: 'inline-block', padding: '12px 28px',
+              background: 'linear-gradient(135deg, #6c9bd2, #4a7abf)',
+              color: 'white', borderRadius: '12px', fontWeight: '700',
+              textDecoration: 'none', fontSize: '0.95rem'
+            }}>
+              Entrar no aplicativo →
+            </a>
+          </div>
+        )}
+
         {/* ── LOGIN ── */}
-        {etapa === 'login' && (
+        {!loginOk && etapa === 'login' && (
           <>
             <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#2c3e6b', margin: '0 0 6px' }}>
               Entrar na sua conta
@@ -204,7 +235,7 @@ export default function SignInPage() {
         )}
 
         {/* ── RESET — digitar e-mail ── */}
-        {etapa === 'reset_email' && (
+        {!loginOk && etapa === 'reset_email' && (
           <>
             <button onClick={voltarParaLogin} style={{ background: 'none', border: 'none', color: '#6b7a99', fontSize: '0.85rem', cursor: 'pointer', padding: '0 0 16px', display: 'flex', alignItems: 'center', gap: '4px' }}>
               ← Voltar ao login
@@ -235,7 +266,7 @@ export default function SignInPage() {
         )}
 
         {/* ── RESET — inserir código + nova senha ── */}
-        {etapa === 'reset_codigo' && (
+        {!loginOk && etapa === 'reset_codigo' && (
           <>
             <button onClick={() => { setEtapa('reset_email'); setErro(''); setSucesso('') }}
               style={{ background: 'none', border: 'none', color: '#6b7a99', fontSize: '0.85rem', cursor: 'pointer', padding: '0 0 16px', display: 'flex', alignItems: 'center', gap: '4px' }}>
