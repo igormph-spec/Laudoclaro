@@ -117,6 +117,101 @@ function CardParceiro({ onDismiss }: { onDismiss: () => void }) {
     </div>
   )
 }
+// ── BANNER INSTALAR PWA ───────────────────────────────────────────────────────
+function BannerInstalar() {
+  const [prompt, setPrompt] = useState<any>(null)
+  const [isIOS, setIsIOS] = useState(false)
+  const [mostrar, setMostrar] = useState(false)
+  const [passoIOS, setPassoIOS] = useState(false)
+
+  useEffect(() => {
+    if (window.matchMedia('(display-mode: standalone)').matches) return
+    if (sessionStorage.getItem('pwa-banner-dismissed')) return
+
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !(window.navigator as any).standalone
+    if (ios) { setIsIOS(true); setMostrar(true); return }
+
+    const handler = (e: Event) => { e.preventDefault(); setPrompt(e); setMostrar(true) }
+    window.addEventListener('beforeinstallprompt', handler as any)
+    return () => window.removeEventListener('beforeinstallprompt', handler as any)
+  }, [])
+
+  function dispensar() {
+    sessionStorage.setItem('pwa-banner-dismissed', '1')
+    setMostrar(false)
+  }
+
+  async function instalar() {
+    if (!prompt) return
+    prompt.prompt()
+    const { outcome } = await prompt.userChoice
+    if (outcome === 'accepted') setMostrar(false)
+  }
+
+  if (!mostrar) return null
+
+  return (
+    <div style={{
+      background: 'linear-gradient(135deg, #4a7abf, #2f5fa8)',
+      color: 'white', padding: '12px 16px',
+      display: 'flex', alignItems: 'flex-start', gap: '12px',
+      position: 'relative'
+    }}>
+      <span style={{ fontSize: '1.4rem', flexShrink: 0, marginTop: '2px' }}>📲</span>
+      <div style={{ flex: 1 }}>
+        {!isIOS ? (
+          <>
+            <p style={{ margin: '0 0 6px', fontWeight: '700', fontSize: '0.9rem' }}>
+              Adicione o LaudoClaro à sua tela inicial
+            </p>
+            <p style={{ margin: '0 0 10px', fontSize: '0.82rem', opacity: 0.9 }}>
+              Acesse como um app, sem precisar do navegador.
+            </p>
+            <button onClick={instalar} style={{
+              background: 'white', color: '#2f5fa8', border: 'none',
+              padding: '8px 18px', borderRadius: '20px', fontWeight: '700',
+              fontSize: '0.85rem', cursor: 'pointer'
+            }}>
+              Instalar agora
+            </button>
+          </>
+        ) : !passoIOS ? (
+          <>
+            <p style={{ margin: '0 0 6px', fontWeight: '700', fontSize: '0.9rem' }}>
+              Adicione o LaudoClaro à sua tela inicial
+            </p>
+            <p style={{ margin: '0 0 10px', fontSize: '0.82rem', opacity: 0.9 }}>
+              No iPhone é simples — toque em compartilhar e adicione à tela inicial.
+            </p>
+            <button onClick={() => setPassoIOS(true)} style={{
+              background: 'white', color: '#2f5fa8', border: 'none',
+              padding: '8px 18px', borderRadius: '20px', fontWeight: '700',
+              fontSize: '0.85rem', cursor: 'pointer'
+            }}>
+              Ver como fazer
+            </button>
+          </>
+        ) : (
+          <>
+            <p style={{ margin: '0 0 8px', fontWeight: '700', fontSize: '0.9rem' }}>
+              Como instalar no iPhone:
+            </p>
+            <ol style={{ margin: '0 0 4px', paddingLeft: '18px', fontSize: '0.82rem', opacity: 0.95, lineHeight: '1.8' }}>
+              <li>Toque no ícone de compartilhar <strong>⬆️</strong> na barra do Safari</li>
+              <li>Role para baixo e toque em <strong>"Adicionar à Tela de Início"</strong></li>
+              <li>Toque em <strong>"Adicionar"</strong> no canto superior direito</li>
+            </ol>
+          </>
+        )}
+      </div>
+      <button onClick={dispensar} aria-label="Fechar" style={{
+        background: 'none', border: 'none', color: 'white',
+        opacity: 0.7, fontSize: '20px', cursor: 'pointer',
+        padding: '0 2px', flexShrink: 0, lineHeight: 1
+      }}>×</button>
+    </div>
+  )
+}
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function Home() {
@@ -356,6 +451,8 @@ export default function Home() {
       background: 'linear-gradient(135deg, #f5f0ff 0%, #e8f4fd 100%)',
       fontFamily: "'Segoe UI', system-ui, sans-serif"
     }}>
+      <BannerInstalar />
+
       {/* Header */}
       <header style={{
         background: 'white', borderBottom: '1px solid #e8edf5',
