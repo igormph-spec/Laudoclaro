@@ -38,6 +38,87 @@ function formatarTelefone(valor: string): string {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
 }
 
+// ── PARCEIRO ─────────────────────────────────────────────────────────────────
+// Troque os dados abaixo pelo parceiro real quando fechar o contrato.
+const PARCEIRO = {
+  logo: '💊',
+  nome: 'Drogaria São Paulo',
+  tagline: 'Medicamentos com até 40% de desconto',
+  descricao: 'Apresente este QR ou use o link exclusivo LaudoClaro e ganhe desconto na sua primeira compra.',
+  cta: 'Ver oferta exclusiva',
+  url: 'https://www.drogariasaopaulo.com.br', // substituir pelo link de afiliado
+  cor: '#1a7a3c',
+}
+
+function CardParceiro({ onDismiss }: { onDismiss: () => void }) {
+  return (
+    <div style={{
+      width: '100%', maxWidth: '580px', marginTop: '16px',
+      background: 'white', borderRadius: '16px', padding: '20px 24px',
+      boxShadow: '0 2px 16px rgba(108,155,210,0.10)',
+      border: '1px solid #e8edf5', position: 'relative'
+    }}>
+      {/* Label publicidade + fechar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+        <span style={{
+          fontSize: '10px', fontWeight: '700', color: '#9aa3b8',
+          textTransform: 'uppercase', letterSpacing: '0.8px',
+          border: '1px solid #d8e4f0', padding: '2px 8px', borderRadius: '20px'
+        }}>
+          Parceiro
+        </span>
+        <button
+          onClick={onDismiss}
+          aria-label="Fechar anúncio"
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: '#b0b8cc', fontSize: '18px', lineHeight: 1, padding: '0 2px'
+          }}
+        >
+          ×
+        </button>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{
+          width: '52px', height: '52px', borderRadius: '14px', flexShrink: 0,
+          background: '#f0f7ff', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', fontSize: '1.8rem'
+        }}>
+          {PARCEIRO.logo}
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: '0.8rem', color: '#9aa3b8', marginBottom: '2px' }}>{PARCEIRO.nome}</div>
+          <div style={{ fontSize: '1rem', fontWeight: '700', color: '#2c3e6b', marginBottom: '4px', lineHeight: '1.3' }}>
+            {PARCEIRO.tagline}
+          </div>
+          <div style={{ fontSize: '0.82rem', color: '#6b7a99', lineHeight: '1.5' }}>
+            {PARCEIRO.descricao}
+          </div>
+        </div>
+      </div>
+
+      <a
+        href={PARCEIRO.url}
+        target="_blank"
+        rel="noopener noreferrer sponsored"
+        style={{
+          display: 'block', marginTop: '16px', padding: '11px',
+          borderRadius: '10px', textAlign: 'center',
+          background: PARCEIRO.cor, color: 'white',
+          fontSize: '0.9rem', fontWeight: '700', textDecoration: 'none',
+          transition: 'opacity 0.15s'
+        }}
+        onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
+        onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+      >
+        {PARCEIRO.cta} →
+      </a>
+    </div>
+  )
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function Home() {
   const { isLoaded, isSignedIn } = useAuth()
   const router = useRouter()
@@ -71,6 +152,9 @@ export default function Home() {
   // Histórico
   const [historico, setHistorico] = useState<HistoricoItem[]>([])
   const [itemSelecionado, setItemSelecionado] = useState<HistoricoItem | null>(null)
+
+  // Publicidade nativa
+  const [parceiroDismissed, setParceiroDismissed] = useState(false)
 
   useEffect(() => {
     if (isLoaded && !isSignedIn) router.push('/sign-in')
@@ -230,6 +314,7 @@ export default function Home() {
       setUsageCount(data.usageCount)
       setCredits(data.credits)
       setIsPremium(data.isPremium)
+      setParceiroDismissed(false)
       salvarHistorico(laudo, data.traducao)
       setHistorico(carregarHistorico())
     } catch (e: any) {
@@ -496,18 +581,24 @@ export default function Home() {
               )}
 
               {traducao && (
-                <div style={{
-                  width: '100%', maxWidth: '580px', background: 'white',
-                  borderRadius: '20px', padding: '28px',
-                  boxShadow: '0 4px 24px rgba(108,155,210,0.12)', borderLeft: '5px solid #6c9bd2'
-                }}>
-                  <h2 style={{ color: '#2c3e6b', fontSize: '1rem', fontWeight: '700', marginBottom: '16px' }}>
-                    ✅ Explicação do seu laudo
-                  </h2>
-                  <div style={{ color: '#3a4a6b', lineHeight: '1.8', fontSize: '0.95rem', whiteSpace: 'pre-wrap' }}>
-                    {traducao}
+                <>
+                  <div style={{
+                    width: '100%', maxWidth: '580px', background: 'white',
+                    borderRadius: '20px', padding: '28px',
+                    boxShadow: '0 4px 24px rgba(108,155,210,0.12)', borderLeft: '5px solid #6c9bd2'
+                  }}>
+                    <h2 style={{ color: '#2c3e6b', fontSize: '1rem', fontWeight: '700', marginBottom: '16px' }}>
+                      ✅ Explicação do seu laudo
+                    </h2>
+                    <div style={{ color: '#3a4a6b', lineHeight: '1.8', fontSize: '0.95rem', whiteSpace: 'pre-wrap' }}>
+                      {traducao}
+                    </div>
                   </div>
-                </div>
+
+                  {!parceiroDismissed && (
+                    <CardParceiro onDismiss={() => setParceiroDismissed(true)} />
+                  )}
+                </>
               )}
             </>
           )}
