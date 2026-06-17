@@ -679,7 +679,7 @@ export default function Home() {
 
               {traducao && (
                 <>
-                  <div style={{
+                  <div id="print-area" style={{
                     width: '100%', maxWidth: '580px', background: 'white',
                     borderRadius: '20px', padding: '28px',
                     boxShadow: '0 4px 24px rgba(108,155,210,0.12)', borderLeft: '5px solid #6c9bd2'
@@ -690,6 +690,35 @@ export default function Home() {
                     <div style={{ color: '#3a4a6b', lineHeight: '1.8', fontSize: '0.95rem', whiteSpace: 'pre-wrap' }}>
                       {traducao}
                     </div>
+
+                    {/* Disclaimer — visível apenas na impressão */}
+                    <div className="print-disclaimer">
+                      <hr style={{ margin: '20px 0', borderColor: '#e0e0e0' }} />
+                      <p style={{ fontSize: '0.78rem', color: '#888', lineHeight: '1.6' }}>
+                        ⚠️ <strong>Aviso importante:</strong> Este documento é uma explicação em linguagem simples
+                        gerada por inteligência artificial (LaudoClaro) para fins educativos e informativos.{' '}
+                        <strong>Não é um laudo médico</strong> e não substitui a interpretação do profissional
+                        de saúde responsável. Não deve ser utilizado como base para diagnóstico, tratamento
+                        ou qualquer decisão clínica.
+                      </p>
+                      <p style={{ fontSize: '0.75rem', color: '#aaa', marginTop: '8px' }}>
+                        Gerado em {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })} · laudoclaro1.vercel.app
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={() => window.print()}
+                      className="no-print"
+                      style={{
+                        marginTop: '20px', padding: '10px 20px',
+                        borderRadius: '10px', border: '1.5px solid #d8e4f0',
+                        background: 'white', color: '#4a7abf',
+                        fontSize: '0.88rem', fontWeight: '600',
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px'
+                      }}
+                    >
+                      🖨️ Imprimir / Salvar PDF
+                    </button>
                   </div>
 
                   {!parceiroDismissed && (

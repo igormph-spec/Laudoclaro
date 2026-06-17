@@ -16,3 +16,36 @@ body {
 :root {
   --vh: 1vh;
 }
+
+/* ── IMPRESSÃO ────────────────────────────────────────────────── */
+.print-disclaimer { display: none; }
+
+@media print {
+  /* Esconde tudo */
+  body > * { display: none !important; }
+
+  /* Mostra só o conteúdo da tradução */
+  #print-area {
+    display: block !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    border-left: 3px solid #4a7abf !important;
+    padding: 24px !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  /* Garante que o main pai seja visível para o print-area aparecer */
+  #print-area,
+  #print-area * { display: revert !important; }
+
+  /* Mostra o disclaimer */
+  .print-disclaimer { display: block !important; }
+
+  /* Esconde o botão de imprimir */
+  .no-print { display: none !important; }
+
+  @page {
+    margin: 2cm;
+  }
+}
