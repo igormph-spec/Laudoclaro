@@ -2,15 +2,14 @@
 
 import { useSignUp } from '@clerk/nextjs'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 export default function SignUpPage() {
   const { isLoaded, signUp, setActive } = useSignUp()
-  const router = useRouter()
 
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
+  const [mostrarSenha, setMostrarSenha] = useState(false)
   const [codigo, setCodigo] = useState('')
   const [etapa, setEtapa] = useState<'cadastro' | 'verificacao'>('cadastro')
   const [erro, setErro] = useState('')
@@ -19,6 +18,10 @@ export default function SignUpPage() {
   async function handleCadastro(e: React.FormEvent) {
     e.preventDefault()
     if (!isLoaded) return
+    if (senha.length < 8) {
+      setErro('A senha deve ter pelo menos 8 caracteres.')
+      return
+    }
     setLoading(true)
     setErro('')
     try {
@@ -26,11 +29,17 @@ export default function SignUpPage() {
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' })
       setEtapa('verificacao')
     } catch (err: any) {
-      const msg = err?.errors?.[0]?.code
-      if (msg === 'form_password_pwned') setErro('Senha muito simples. Use letras, números e símbolos.')
-      else if (msg === 'form_identifier_exists') setErro('Este e-mail já está cadastrado.')
-      else if (msg === 'form_password_length_too_short') setErro('A senha deve ter pelo menos 8 caracteres.')
-      else setErro('Erro ao criar conta. Verifique os dados.')
+      const code = err?.errors?.[0]?.code
+      if (code === 'form_password_pwned')
+        setErro('Essa senha é muito comum e pode ser facilmente descoberta. Tente uma combinação diferente — por exemplo: "Joao@2024" ou "Saude#minha7".')
+      else if (code === 'form_identifier_exists')
+        setErro('Este e-mail já tem uma conta. Use "Entrar" ou recupere sua senha.')
+      else if (code === 'form_password_length_too_short')
+        setErro('A senha deve ter pelo menos 8 caracteres.')
+      else if (code === 'form_param_format_invalid')
+        setErro('E-mail inválido. Verifique e tente novamente.')
+      else
+        setErro('Não foi possível criar a conta. Verifique os dados e tente novamente.')
     }
     setLoading(false)
   }
@@ -47,10 +56,13 @@ export default function SignUpPage() {
         window.location.href = '/'
       }
     } catch (err: any) {
-      const msg = err?.errors?.[0]?.code
-      if (msg === 'form_code_incorrect') setErro('Código incorreto. Verifique e tente novamente.')
-      else if (msg === 'verification_expired') setErro('Código expirado. Volte e tente de novo.')
-      else setErro('Erro ao verificar. Tente novamente.')
+      const code = err?.errors?.[0]?.code
+      if (code === 'form_code_incorrect')
+        setErro('Código incorreto. Verifique o e-mail e tente novamente.')
+      else if (code === 'verification_expired')
+        setErro('Código expirado. Volte e tente criar a conta novamente.')
+      else
+        setErro('Erro ao verificar. Tente novamente.')
     }
     setLoading(false)
   }
@@ -73,14 +85,10 @@ export default function SignUpPage() {
     <main style={{
       minHeight: '100dvh',
       background: 'linear-gradient(135deg, #f5f0ff 0%, #e8f4fd 100%)',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '24px',
-      fontFamily: "'Segoe UI', system-ui, sans-serif"
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      padding: '24px', fontFamily: "'Segoe UI', system-ui, sans-serif"
     }}>
-      {/* Logo */}
       <div style={{ textAlign: 'center', marginBottom: '28px' }}>
         <svg width="52" height="52" viewBox="0 0 56 56" fill="none" style={{ marginBottom: '12px' }}>
           <circle cx="28" cy="28" r="28" fill="#6c9bd2"/>
@@ -94,7 +102,6 @@ export default function SignUpPage() {
         </p>
       </div>
 
-      {/* Card */}
       <div style={{
         background: 'white', borderRadius: '20px', padding: '36px 32px',
         width: '100%', maxWidth: '400px',
@@ -124,23 +131,56 @@ export default function SignUpPage() {
                 />
               </div>
 
-              <div style={{ marginBottom: '8px' }}>
+              <div style={{ marginBottom: '4px' }}>
                 <label style={{ display: 'block', color: '#4a5580', fontWeight: '600', fontSize: '0.9rem', marginBottom: '6px' }}>
                   Senha
                 </label>
-                <input
-                  type="password"
-                  value={senha}
-                  onChange={e => setSenha(e.target.value)}
-                  placeholder="Mínimo 8 caracteres"
-                  required
-                  minLength={8}
-                  style={inputStyle}
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={mostrarSenha ? 'text' : 'password'}
+                    value={senha}
+                    onChange={e => { setSenha(e.target.value); setErro('') }}
+                    placeholder="Mínimo 8 caracteres"
+                    required
+                    style={{ ...inputStyle, paddingRight: '48px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setMostrarSenha(v => !v)}
+                    style={{
+                      position: 'absolute', right: '12px', top: '50%',
+                      transform: 'translateY(-50%)', background: 'none',
+                      border: 'none', cursor: 'pointer', color: '#9aa3b8',
+                      fontSize: '0.85rem', padding: '4px'
+                    }}
+                  >
+                    {mostrarSenha ? 'Ocultar' : 'Ver'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Dicas de senha sempre visíveis */}
+              <div style={{
+                background: '#f5f9ff', borderRadius: '10px',
+                padding: '10px 14px', marginTop: '10px',
+                fontSize: '0.8rem', color: '#6b7a99', lineHeight: '1.7'
+              }}>
+                <strong style={{ color: '#4a5580' }}>Dicas para uma boa senha:</strong><br />
+                ✓ Pelo menos 8 caracteres<br />
+                ✓ Misture letras maiúsculas e minúsculas<br />
+                ✓ Inclua um número ou símbolo (ex: @, #, !)<br />
+                ✗ Evite: 12345678, senha123, seu nome ou data de nascimento
               </div>
 
               {erro && (
-                <p style={{ color: '#e74c3c', fontSize: '0.85rem', margin: '8px 0 0' }}>⚠️ {erro}</p>
+                <div style={{
+                  background: '#fff3f3', border: '1px solid #f5c6cb',
+                  borderRadius: '10px', padding: '12px 14px',
+                  marginTop: '12px', color: '#c0392b',
+                  fontSize: '0.85rem', lineHeight: '1.5'
+                }}>
+                  ⚠️ {erro}
+                </div>
               )}
 
               <button type="submit" disabled={loading} style={btnStyle(loading)}>
@@ -160,9 +200,14 @@ export default function SignUpPage() {
             <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#2c3e6b', margin: '0 0 6px' }}>
               Confirme seu e-mail
             </h2>
-            <p style={{ color: '#6b7a99', fontSize: '0.9rem', margin: '0 0 24px' }}>
-              Enviamos um código de 6 dígitos para <strong>{email}</strong>
-            </p>
+            <div style={{
+              background: '#eafaf1', border: '1px solid #a9dfbf',
+              borderRadius: '10px', padding: '12px 14px', marginBottom: '20px',
+              fontSize: '0.88rem', color: '#1e8449', lineHeight: '1.5'
+            }}>
+              📧 Enviamos um código de 6 dígitos para <strong>{email}</strong>.
+              Verifique também a caixa de spam.
+            </div>
 
             <form onSubmit={handleVerificacao}>
               <div style={{ marginBottom: '8px' }}>
@@ -171,8 +216,9 @@ export default function SignUpPage() {
                 </label>
                 <input
                   type="text"
+                  inputMode="numeric"
                   value={codigo}
-                  onChange={e => setCodigo(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  onChange={e => { setCodigo(e.target.value.replace(/\D/g, '').slice(0, 6)); setErro('') }}
                   placeholder="000000"
                   required
                   maxLength={6}
@@ -181,7 +227,14 @@ export default function SignUpPage() {
               </div>
 
               {erro && (
-                <p style={{ color: '#e74c3c', fontSize: '0.85rem', margin: '8px 0 0' }}>⚠️ {erro}</p>
+                <div style={{
+                  background: '#fff3f3', border: '1px solid #f5c6cb',
+                  borderRadius: '10px', padding: '12px 14px',
+                  marginTop: '8px', color: '#c0392b',
+                  fontSize: '0.85rem', lineHeight: '1.5'
+                }}>
+                  ⚠️ {erro}
+                </div>
               )}
 
               <button type="submit" disabled={loading || codigo.length < 6} style={btnStyle(loading || codigo.length < 6)}>
@@ -190,10 +243,14 @@ export default function SignUpPage() {
             </form>
 
             <button
-              onClick={() => { setEtapa('cadastro'); setErro('') }}
-              style={{ width: '100%', marginTop: '12px', padding: '10px', borderRadius: '12px', border: '1.5px solid #d8e4f0', background: 'white', color: '#6b7a99', fontSize: '0.9rem', cursor: 'pointer' }}
+              onClick={() => { setEtapa('cadastro'); setErro(''); setCodigo('') }}
+              style={{
+                width: '100%', marginTop: '12px', padding: '10px',
+                borderRadius: '12px', border: '1.5px solid #d8e4f0',
+                background: 'white', color: '#6b7a99', fontSize: '0.9rem', cursor: 'pointer'
+              }}
             >
-              ← Voltar
+              ← Voltar e corrigir os dados
             </button>
           </>
         )}
