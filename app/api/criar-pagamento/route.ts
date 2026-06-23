@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
         external_reference: `${userId}|${planoId}`,
         back_urls: {
           success: `${baseUrl}/pagamento/sucesso?plano=${planoId}`,
-          failure: `${baseUrl}`,
+          failure: `${baseUrl}/pagamento/falhou`,
           pending: `${baseUrl}/pagamento/pendente`
         },
         auto_return: 'approved',

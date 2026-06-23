@@ -17,35 +17,36 @@ body {
   --vh: 1vh;
 }
 
+/* Sidebar oculta em celular */
+@media (max-width: 600px) {
+  .historico-sidebar { display: none !important; }
+}
+
 /* ── IMPRESSÃO ────────────────────────────────────────────────── */
 .print-disclaimer { display: none; }
 
 @media print {
-  /* Esconde tudo */
-  body > * { display: none !important; }
+  /* Oculta visualmente tudo sem quebrar o layout de position */
+  body * { visibility: hidden; }
 
-  /* Mostra só o conteúdo da tradução */
+  /* Mostra só a área de impressão e seus filhos */
+  #print-area,
+  #print-area * { visibility: visible; }
+
+  /* Posiciona no topo da página */
   #print-area {
-    display: block !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
     box-shadow: none !important;
     border-radius: 0 !important;
     border-left: 3px solid #4a7abf !important;
     padding: 24px !important;
-    max-width: 100% !important;
-    width: 100% !important;
   }
 
-  /* Garante que o main pai seja visível para o print-area aparecer */
-  #print-area,
-  #print-area * { display: revert !important; }
-
-  /* Mostra o disclaimer */
   .print-disclaimer { display: block !important; }
-
-  /* Esconde o botão de imprimir */
   .no-print { display: none !important; }
 
-  @page {
-    margin: 2cm;
-  }
+  @page { margin: 2cm; }
 }

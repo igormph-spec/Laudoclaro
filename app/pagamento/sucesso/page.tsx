@@ -5,9 +5,9 @@ import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 
 const PLANOS: Record<string, { laudos: string; nome: string }> = {
-  starter: { laudos: '5 laudos por mês', nome: 'Starter' },
-  familia: { laudos: '20 laudos por mês', nome: 'Família' },
-  premium: { laudos: 'laudos ilimitados', nome: 'Premium' },
+  starter: { laudos: '5 laudos', nome: 'Starter' },
+  familia: { laudos: '20 laudos', nome: 'Família' },
+  premium: { laudos: '60 laudos', nome: 'Premium' },
 }
 
 function ConteudoSucesso() {
@@ -23,19 +23,21 @@ function ConteudoSucesso() {
     }}>
       <div style={{ fontSize: '3.5rem', marginBottom: '16px' }}>✅</div>
       <h1 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#2c3e6b', margin: '0 0 12px' }}>
-        Assinatura confirmada!
+        Pagamento confirmado!
       </h1>
       <p style={{ color: '#6b7a99', fontSize: '0.95rem', marginBottom: '16px', lineHeight: '1.6' }}>
         {info
-          ? <>Bem-vindo ao <strong>Plano {info.nome}</strong>! Você tem <strong>{info.laudos}</strong> disponíveis a partir de agora.</>
-          : <>Seu pagamento foi confirmado. Seus laudos já estão disponíveis na sua conta!</>
+          ? <>Você adquiriu o <strong>Plano {info.nome}</strong> com <strong>{info.laudos}</strong>.</>
+          : <>Seu pagamento foi confirmado com sucesso!</>
         }
       </p>
       <div style={{
-        background: '#f0f7ff', borderRadius: '12px', padding: '14px 18px',
-        marginBottom: '28px', fontSize: '0.85rem', color: '#4a6a9b', lineHeight: '1.6'
+        background: '#fff8e1', border: '1px solid #ffe082',
+        borderRadius: '12px', padding: '14px 18px',
+        marginBottom: '24px', fontSize: '0.85rem', color: '#7a5c00', lineHeight: '1.6'
       }}>
-        📅 Sua assinatura renova automaticamente todo mês. Você pode cancelar quando quiser pelo suporte.
+        ⏳ <strong>Seus créditos podem levar até 2 minutos para aparecer.</strong><br />
+        Se ao entrar no app ainda não estiverem disponíveis, aguarde um momento e recarregue a página.
       </div>
       <Link href="/" style={{
         display: 'inline-block', padding: '14px 32px',
@@ -43,7 +45,7 @@ function ConteudoSucesso() {
         color: 'white', borderRadius: '12px', fontWeight: '700',
         textDecoration: 'none', fontSize: '1rem'
       }}>
-        Usar o LaudoClaro →
+        Ir para o LaudoClaro →
       </Link>
     </div>
   )

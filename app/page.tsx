@@ -38,84 +38,9 @@ function formatarTelefone(valor: string): string {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
 }
 
-// ── PARCEIRO ─────────────────────────────────────────────────────────────────
-// Troque os dados abaixo pelo parceiro real quando fechar o contrato.
-const PARCEIRO = {
-  logo: '💊',
-  nome: 'Drogaria São Paulo',
-  tagline: 'Medicamentos com até 40% de desconto',
-  descricao: 'Apresente este QR ou use o link exclusivo LaudoClaro e ganhe desconto na sua primeira compra.',
-  cta: 'Ver oferta exclusiva',
-  url: 'https://www.drogariasaopaulo.com.br', // substituir pelo link de afiliado
-  cor: '#1a7a3c',
-}
-
+// CardParceiro desativado até fechar contrato com parceiro real
 function CardParceiro({ onDismiss }: { onDismiss: () => void }) {
-  return (
-    <div style={{
-      width: '100%', maxWidth: '580px', marginTop: '16px',
-      background: 'white', borderRadius: '16px', padding: '20px 24px',
-      boxShadow: '0 2px 16px rgba(108,155,210,0.10)',
-      border: '1px solid #e8edf5', position: 'relative'
-    }}>
-      {/* Label publicidade + fechar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-        <span style={{
-          fontSize: '10px', fontWeight: '700', color: '#9aa3b8',
-          textTransform: 'uppercase', letterSpacing: '0.8px',
-          border: '1px solid #d8e4f0', padding: '2px 8px', borderRadius: '20px'
-        }}>
-          Parceiro
-        </span>
-        <button
-          onClick={onDismiss}
-          aria-label="Fechar anúncio"
-          style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: '#b0b8cc', fontSize: '18px', lineHeight: 1, padding: '0 2px'
-          }}
-        >
-          ×
-        </button>
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-        <div style={{
-          width: '52px', height: '52px', borderRadius: '14px', flexShrink: 0,
-          background: '#f0f7ff', display: 'flex', alignItems: 'center',
-          justifyContent: 'center', fontSize: '1.8rem'
-        }}>
-          {PARCEIRO.logo}
-        </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: '0.8rem', color: '#9aa3b8', marginBottom: '2px' }}>{PARCEIRO.nome}</div>
-          <div style={{ fontSize: '1rem', fontWeight: '700', color: '#2c3e6b', marginBottom: '4px', lineHeight: '1.3' }}>
-            {PARCEIRO.tagline}
-          </div>
-          <div style={{ fontSize: '0.82rem', color: '#6b7a99', lineHeight: '1.5' }}>
-            {PARCEIRO.descricao}
-          </div>
-        </div>
-      </div>
-
-      <a
-        href={PARCEIRO.url}
-        target="_blank"
-        rel="noopener noreferrer sponsored"
-        style={{
-          display: 'block', marginTop: '16px', padding: '11px',
-          borderRadius: '10px', textAlign: 'center',
-          background: PARCEIRO.cor, color: 'white',
-          fontSize: '0.9rem', fontWeight: '700', textDecoration: 'none',
-          transition: 'opacity 0.15s'
-        }}
-        onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
-        onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-      >
-        {PARCEIRO.cta} →
-      </a>
-    </div>
-  )
+  return null
 }
 // ── BANNER INSTALAR PWA ───────────────────────────────────────────────────────
 function BannerInstalar() {
@@ -479,7 +404,7 @@ export default function Home() {
               background: semCreditos ? '#fdecea' : '#f0f4ff',
               padding: '4px 10px', borderRadius: '20px'
             }}>
-              {semCreditos ? '⚠️ Sem créditos' : `${laudosRestantes} disponível${credits !== 1 ? 'eis' : ''}`}
+              {semCreditos ? '⚠️ Sem créditos' : usageCount === 0 ? '1 laudo gratuito disponível' : `${credits} crédito${credits !== 1 ? 's' : ''} disponível${credits !== 1 ? 'eis' : ''}`}
             </span>
           )}
           <UserButton afterSignOutUrl="/sign-in" />
@@ -487,10 +412,10 @@ export default function Home() {
       </header>
 
       <div style={{ display: 'flex', minHeight: 'calc(100dvh - 57px)' }}>
-        {/* Sidebar histórico */}
+        {/* Sidebar histórico — oculta em telas pequenas */}
         {historico.length > 0 && (
-          <aside style={{
-            width: '260px', minWidth: '260px', background: 'white',
+          <aside className="historico-sidebar" style={{
+            width: '220px', minWidth: '220px', background: 'white',
             borderRight: '1px solid #e8edf5', padding: '20px 0', overflowY: 'auto'
           }}>
             <p style={{ fontSize: '0.75rem', fontWeight: '700', color: '#9aa3b8', textTransform: 'uppercase', letterSpacing: '0.5px', padding: '0 16px 12px' }}>
@@ -730,7 +655,7 @@ export default function Home() {
           )}
 
           <p style={{ color: '#b0b8cc', fontSize: '0.75rem', marginTop: '32px', textAlign: 'center' }}>
-            ℹ️ Esta ferramenta não substitui a consulta médica · LaudoClaro © 2025
+            ℹ️ Esta ferramenta não substitui a consulta médica · LaudoClaro © 2026
           </p>
         </div>
       </div>

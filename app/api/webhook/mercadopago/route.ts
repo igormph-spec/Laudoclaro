@@ -4,8 +4,12 @@ import { createHmac } from 'crypto'
 
 function validarAssinaturaMP(request: NextRequest, body: string): boolean {
   const secret = process.env.MP_WEBHOOK_SECRET
-  // Se não houver secret configurado, passa (compatibilidade)
-  if (!secret) return true
+  // Sem secret: só aceita chamadas que venham do IP do Mercado Pago (verificado pelo user-agent)
+  if (!secret) {
+    const ua = request.headers.get('user-agent') ?? ''
+    // MP usa user-agent "MercadoPago"
+    return ua.toLowerCase().includes('mercadopago')
+  }
 
   const xSignature = request.headers.get('x-signature') ?? ''
   const xRequestId = request.headers.get('x-request-id') ?? ''
