@@ -300,7 +300,8 @@ export default function Home() {
             </button>
           </form>
           <p style={{ color: '#b0b8cc', fontSize: '0.75rem', marginTop: '20px' }}>
-            Seus dados são protegidos e não serão compartilhados.
+            Usamos seu número apenas conforme a{' '}
+            <a href="/privacidade" target="_blank" style={{ color: '#6c9bd2' }}>Política de Privacidade</a>.
           </p>
         </div>
       </main>
@@ -575,6 +576,12 @@ export default function Home() {
                     background: semCreditos ? '#f8f9fb' : 'white'
                   }}
                 />
+                <p style={{ color: '#9aa3b8', fontSize: '0.75rem', lineHeight: '1.6', margin: '10px 0 0' }}>
+                  🔒 Ao enviar, o texto do laudo é processado por inteligência artificial (Anthropic, EUA)
+                  apenas para gerar sua explicação — ele não fica salvo em nossos servidores. Dica: remova
+                  nome, CPF e outros dados que identifiquem você.{' '}
+                  <a href="/privacidade" target="_blank" style={{ color: '#6c9bd2' }}>Saiba mais</a>.
+                </p>
                 <button
                   onClick={traduzir}
                   disabled={loading || semCreditos || !laudo.trim()}
@@ -655,7 +662,8 @@ export default function Home() {
           )}
 
           <p style={{ color: '#b0b8cc', fontSize: '0.75rem', marginTop: '32px', textAlign: 'center' }}>
-            ℹ️ Esta ferramenta não substitui a consulta médica · LaudoClaro © 2026
+            ℹ️ Esta ferramenta não substitui a consulta médica · LaudoClaro © 2026 ·{' '}
+            <a href="/privacidade" target="_blank" style={{ color: '#9fb3d8' }}>Política de Privacidade</a>
           </p>
         </div>
       </div>

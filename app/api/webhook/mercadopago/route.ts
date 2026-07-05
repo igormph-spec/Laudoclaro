@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { clerkClient } from '@clerk/nextjs/server'
 import { createHmac } from 'crypto'
+import { PLANOS, creditosDoPlano } from '../../../lib/planos'
 
 function validarAssinaturaMP(request: NextRequest, body: string): boolean {
   const secret = process.env.MP_WEBHOOK_SECRET
@@ -26,12 +27,6 @@ function validarAssinaturaMP(request: NextRequest, body: string): boolean {
   return hmac === v1
 }
 
-const CREDITOS_PLANO: Record<string, number> = {
-  starter: 5,
-  familia: 20,
-  premium: 999,
-}
-
 type UserMeta = {
   usageCount?: number
   credits?: number
@@ -47,14 +42,14 @@ async function creditarAssinatura(userId: string, plano: string, assinaturaId: s
   const user = await client.users.getUser(userId)
   const meta = user.publicMetadata as UserMeta
 
-  const creditos = CREDITOS_PLANO[plano] ?? 0
-  const isPremium = plano === 'premium'
+  // Todos os planos são pacotes de créditos (Premium = 60 laudos, não ilimitado).
+  // isPremium permanece como flag manual de cortesia — nunca setada por compra.
+  const creditos = creditosDoPlano(plano)
 
   await client.users.updateUserMetadata(userId, {
     publicMetadata: {
       ...meta,
       credits: creditos,
-      isPremium,
       plano,
       assinaturaId,
       assinaturaStatus: 'authorized',
@@ -118,8 +113,7 @@ export async function POST(request: NextRequest) {
       const [userId, planoId] = extRef.includes('|') ? extRef.split('|') : [extRef, 'familia']
       if (!userId) return NextResponse.json({ erro: 'Usuário não identificado' }, { status: 400 })
 
-      const creditosPorPlano: Record<string, number> = { starter: 5, familia: 20, premium: 60 }
-      const creditosAdicionados = creditosPorPlano[planoId] ?? 20
+      const creditosAdicionados = creditosDoPlano(planoId) || PLANOS.familia.creditos
 
       const client = await clerkClient()
       const user = await client.users.getUser(userId)
