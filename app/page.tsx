@@ -452,7 +452,7 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Paywall — planos de assinatura */}
+          {/* Paywall — pacotes de créditos (compra única, sem mensalidade) */}
           {(semCreditos || erroTraducao === 'sem_creditos') && (
             <div style={{
               width: '100%', maxWidth: '680px', marginBottom: '24px',
@@ -466,7 +466,7 @@ export default function Home() {
                   Escolha seu plano
                 </h3>
                 <p style={{ color: '#6b7a99', fontSize: '0.88rem', margin: 0, lineHeight: '1.6' }}>
-                  Você usou seu laudo gratuito. Assine e continue entendendo seus exames toda semana.
+                  Você usou seu laudo gratuito. Compre um pacote de créditos e continue entendendo seus exames — pagamento único, sem mensalidade, e seus créditos não expiram.
                 </p>
               </div>
 
