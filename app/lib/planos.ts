@@ -6,17 +6,17 @@ export const PLANOS = {
   starter: {
     titulo: 'LaudoClaro — Plano Starter (5 laudos)',
     // ATENÇÃO: o MP limita "reason" da assinatura a 40 caracteres
-    tituloMensal: 'LaudoClaro Starter - 5 laudos/mes',
+    tituloMensal: 'LaudoClaro Starter - 5 laudos por mes',
     preco: 19.90, creditos: 5,
   },
   familia: {
     titulo: 'LaudoClaro — Plano Família (20 laudos)',
-    tituloMensal: 'LaudoClaro Familia - 20 laudos/mes',
+    tituloMensal: 'LaudoClaro Familia - 20 laudos por mes',
     preco: 39.90, creditos: 20,
   },
   premium: {
     titulo: 'LaudoClaro — Plano Premium (60 laudos)',
-    tituloMensal: 'LaudoClaro Premium - 60 laudos/mes',
+    tituloMensal: 'LaudoClaro Premium - 60 laudos por mes',
     preco: 79.90, creditos: 60,
   },
 } as const
