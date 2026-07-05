@@ -27,6 +27,8 @@ export async function GET() {
       whatsapp: meta.whatsapp ?? null,
       plano: meta.plano ?? null,
       assinaturaStatus: meta.assinaturaStatus ?? null,
+      // Só é assinatura de verdade se existe um preapproval ativo no MP
+      temAssinatura: Boolean(meta.assinaturaId) && meta.assinaturaStatus === 'authorized',
     })
   } catch (e: any) {
     return NextResponse.json({ erro: e.message }, { status: 500 })

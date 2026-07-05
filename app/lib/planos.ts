@@ -3,9 +3,21 @@
 // NUNCA duplicar estes valores em outro arquivo.
 
 export const PLANOS = {
-  starter: { titulo: 'LaudoClaro — Plano Starter (5 laudos)',  preco: 19.90, creditos: 5  },
-  familia: { titulo: 'LaudoClaro — Plano Família (20 laudos)', preco: 39.90, creditos: 20 },
-  premium: { titulo: 'LaudoClaro — Plano Premium (60 laudos)', preco: 79.90, creditos: 60 },
+  starter: {
+    titulo: 'LaudoClaro — Plano Starter (5 laudos)',
+    tituloMensal: 'LaudoClaro — Assinatura Starter (5 laudos/mês)',
+    preco: 19.90, creditos: 5,
+  },
+  familia: {
+    titulo: 'LaudoClaro — Plano Família (20 laudos)',
+    tituloMensal: 'LaudoClaro — Assinatura Família (20 laudos/mês)',
+    preco: 39.90, creditos: 20,
+  },
+  premium: {
+    titulo: 'LaudoClaro — Plano Premium (60 laudos)',
+    tituloMensal: 'LaudoClaro — Assinatura Premium (60 laudos/mês)',
+    preco: 79.90, creditos: 60,
+  },
 } as const
 
 export type PlanoId = keyof typeof PLANOS

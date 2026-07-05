@@ -75,14 +75,14 @@ async function atualizarStatusAssinatura(assinaturaId: string, status: string) {
 
   const novoStatus = status === 'authorized' ? 'authorized' : status === 'cancelled' ? 'cancelled' : 'paused'
 
+  // Cancelamento NÃO zera créditos: o usuário pagou pelo mês corrente e
+  // mantém o restante — apenas a renovação automática para.
   await client.users.updateUserMetadata(userId, {
     publicMetadata: {
       ...meta,
       plano: novoStatus === 'authorized' ? plano : meta.plano,
       assinaturaId,
       assinaturaStatus: novoStatus,
-      // Se cancelou, zera créditos restantes
-      ...(novoStatus === 'cancelled' ? { credits: 0, isPremium: false } : {})
     }
   })
 }
@@ -120,12 +120,13 @@ export async function POST(request: NextRequest) {
       const meta = user.publicMetadata as UserMeta
       const creditsAtuais = meta.credits ?? 0
 
+      // Compra avulsa NÃO é assinatura: soma créditos e registra o plano,
+      // sem tocar em assinaturaStatus (que pertence só ao fluxo preapproval).
       await client.users.updateUserMetadata(userId, {
         publicMetadata: {
           ...meta,
           credits: creditsAtuais + creditosAdicionados,
           plano: planoId,
-          assinaturaStatus: 'authorized',
         }
       })
 

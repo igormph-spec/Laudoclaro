@@ -164,10 +164,12 @@ export default function Home() {
   // Pagamento
   const [iniciandoPagamento, setIniciandoPagamento] = useState(false)
   const [planoSelecionado, setPlanoSelecionado] = useState<string | null>(null)
+  const [modoPagamento, setModoPagamento] = useState<'unico' | 'mensal'>('unico')
 
   // Assinatura
   const [plano, setPlano] = useState<string | null>(null)
   const [assinaturaStatus, setAssinaturaStatus] = useState<string | null>(null)
+  const [temAssinatura, setTemAssinatura] = useState(false)
 
   // Histórico
   const [historico, setHistorico] = useState<HistoricoItem[]>([])
@@ -191,6 +193,7 @@ export default function Home() {
       setWhatsappSalvo(data.whatsapp ?? null)
       setPlano(data.plano ?? null)
       setAssinaturaStatus(data.assinaturaStatus ?? null)
+      setTemAssinatura(data.temAssinatura ?? false)
     } finally {
       setPerfilCarregado(true)
     }
@@ -349,7 +352,8 @@ export default function Home() {
     setPlanoSelecionado(planoId)
     setIniciandoPagamento(true)
     try {
-      const res = await fetch('/api/criar-pagamento', {
+      const endpoint = modoPagamento === 'mensal' ? '/api/criar-assinatura' : '/api/criar-pagamento'
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plano: planoId })
@@ -365,6 +369,25 @@ export default function Home() {
     } finally {
       setIniciandoPagamento(false)
       setPlanoSelecionado(null)
+    }
+  }
+
+  async function cancelarAssinatura() {
+    const ok = window.confirm(
+      'Cancelar sua assinatura?\n\nVocê mantém os créditos restantes deste mês — apenas a renovação automática será interrompida.'
+    )
+    if (!ok) return
+    try {
+      const res = await fetch('/api/cancelar-assinatura', { method: 'POST' })
+      const data = await res.json()
+      if (data.ok) {
+        alert('Assinatura cancelada. Seus créditos restantes continuam válidos.')
+        carregarPerfil()
+      } else {
+        alert(data.erro || 'Não foi possível cancelar. Tente novamente.')
+      }
+    } catch {
+      alert('Erro de conexão. Tente novamente.')
     }
   }
 
@@ -394,9 +417,22 @@ export default function Home() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           {assinaturaStatus === 'authorized' ? (
-            <span style={{ fontSize: '0.8rem', color: '#27ae60', background: '#eafaf1', padding: '4px 10px', borderRadius: '20px' }}>
+            <span style={{ fontSize: '0.8rem', color: '#27ae60', background: '#eafaf1', padding: '4px 10px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               ✓ Plano {plano === 'starter' ? 'Starter' : plano === 'familia' ? 'Família' : 'Premium'}
               {!isPremium && ` · ${credits} laudo${credits !== 1 ? 's' : ''}`}
+              {temAssinatura && (
+                <button
+                  onClick={cancelarAssinatura}
+                  title="Cancelar renovação automática"
+                  style={{
+                    background: 'none', border: 'none', color: '#9aa3b8',
+                    fontSize: '0.72rem', cursor: 'pointer', padding: 0,
+                    textDecoration: 'underline'
+                  }}
+                >
+                  cancelar
+                </button>
+              )}
             </span>
           ) : (
             <span style={{
@@ -460,23 +496,45 @@ export default function Home() {
               borderRadius: '20px', padding: '32px',
               boxShadow: '0 4px 24px rgba(108,155,210,0.12)'
             }}>
-              <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <div style={{ textAlign: 'center', marginBottom: '20px' }}>
                 <div style={{ fontSize: '2rem', marginBottom: '10px' }}>🩺</div>
                 <h3 style={{ color: '#2c3e6b', margin: '0 0 8px', fontSize: '1.15rem', fontWeight: '700' }}>
                   Escolha seu plano
                 </h3>
                 <p style={{ color: '#6b7a99', fontSize: '0.88rem', margin: 0, lineHeight: '1.6' }}>
-                  Você usou seu laudo gratuito. Compre um pacote de créditos e continue entendendo seus exames — pagamento único, sem mensalidade, e seus créditos não expiram.
+                  Você usou seu laudo gratuito. Escolha como quer continuar entendendo seus exames.
                 </p>
+              </div>
+
+              {/* Seletor: pagamento único × assinatura mensal */}
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', background: '#eef3fb', borderRadius: '24px', padding: '4px' }}>
+                  {([['unico', 'Pagamento único'], ['mensal', 'Assinatura mensal']] as const).map(([modo, rotulo]) => (
+                    <button
+                      key={modo}
+                      onClick={() => setModoPagamento(modo)}
+                      style={{
+                        border: 'none', borderRadius: '20px', padding: '8px 18px',
+                        fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer',
+                        background: modoPagamento === modo ? 'linear-gradient(135deg, #6c9bd2, #4a7abf)' : 'transparent',
+                        color: modoPagamento === modo ? 'white' : '#6b7a99',
+                        transition: 'all 0.15s'
+                      }}
+                    >
+                      {rotulo}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '20px' }}>
                 {/* Plano Starter */}
                 {(['starter', 'familia', 'premium'] as const).map((planoId) => {
+                  const mensal = modoPagamento === 'mensal'
                   const info = {
-                    starter: { emoji: '🔰', nome: 'Starter', preco: 'R$ 19,90', periodo: '', laudos: '5 laudos', desc: 'Para uso eventual', destaque: false },
-                    familia: { emoji: '👨‍👩‍👧', nome: 'Família', preco: 'R$ 39,90', periodo: '', laudos: '20 laudos', desc: 'O mais popular', destaque: true },
-                    premium: { emoji: '🏆', nome: 'Premium', preco: 'R$ 79,90', periodo: '', laudos: '60 laudos', desc: 'Para uso frequente', destaque: false },
+                    starter: { emoji: '🔰', nome: 'Starter', preco: 'R$ 19,90', periodo: mensal ? '/mês' : '', laudos: mensal ? '5 laudos/mês' : '5 laudos', desc: 'Para uso eventual', destaque: false },
+                    familia: { emoji: '👨‍👩‍👧', nome: 'Família', preco: 'R$ 39,90', periodo: mensal ? '/mês' : '', laudos: mensal ? '20 laudos/mês' : '20 laudos', desc: 'O mais popular', destaque: true },
+                    premium: { emoji: '🏆', nome: 'Premium', preco: 'R$ 79,90', periodo: mensal ? '/mês' : '', laudos: mensal ? '60 laudos/mês' : '60 laudos', desc: 'Para uso frequente', destaque: false },
                   }[planoId]
                   const carregando = iniciandoPagamento && planoSelecionado === planoId
                   return (
@@ -516,7 +574,7 @@ export default function Home() {
                           cursor: iniciandoPagamento ? 'not-allowed' : 'pointer'
                         }}
                       >
-                        {carregando ? '⏳ Aguarde...' : 'Comprar'}
+                        {carregando ? '⏳ Aguarde...' : mensal ? 'Assinar' : 'Comprar'}
                       </button>
                     </div>
                   )
@@ -524,7 +582,9 @@ export default function Home() {
               </div>
 
               <p style={{ color: '#b0b8cc', fontSize: '0.72rem', textAlign: 'center', margin: 0 }}>
-                Pagamento seguro via Mercado Pago · PIX, cartão de crédito ou boleto
+                {modoPagamento === 'mensal'
+                  ? 'Renovação automática todo mês no cartão · cancele quando quiser, sem multa · pagamento seguro via Mercado Pago'
+                  : 'Pagamento único, sem mensalidade · seus créditos não expiram · PIX, cartão ou boleto via Mercado Pago'}
               </p>
             </div>
           )}

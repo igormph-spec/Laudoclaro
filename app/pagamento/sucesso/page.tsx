@@ -13,6 +13,7 @@ const PLANOS: Record<string, { laudos: string; nome: string }> = {
 function ConteudoSucesso() {
   const params = useSearchParams()
   const plano = params.get('plano') ?? ''
+  const assinatura = params.get('tipo') === 'assinatura'
   const info = PLANOS[plano]
 
   return (
@@ -23,11 +24,13 @@ function ConteudoSucesso() {
     }}>
       <div style={{ fontSize: '3.5rem', marginBottom: '16px' }}>✅</div>
       <h1 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#2c3e6b', margin: '0 0 12px' }}>
-        Pagamento confirmado!
+        {assinatura ? 'Assinatura confirmada!' : 'Pagamento confirmado!'}
       </h1>
       <p style={{ color: '#6b7a99', fontSize: '0.95rem', marginBottom: '16px', lineHeight: '1.6' }}>
         {info
-          ? <>Você adquiriu o <strong>Plano {info.nome}</strong> com <strong>{info.laudos}</strong>.</>
+          ? assinatura
+            ? <>Você assinou o <strong>Plano {info.nome}</strong>: <strong>{info.laudos}</strong> renovados automaticamente todo mês. Cancele quando quiser, direto no app.</>
+            : <>Você adquiriu o <strong>Plano {info.nome}</strong> com <strong>{info.laudos}</strong>.</>
           : <>Seu pagamento foi confirmado com sucesso!</>
         }
       </p>
