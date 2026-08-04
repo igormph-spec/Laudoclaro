@@ -161,6 +161,11 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [erroTraducao, setErroTraducao] = useState('')
 
+  // Upload de foto
+  const [extraindoTexto, setExtraindoTexto] = useState(false)
+  const [erroFoto, setErroFoto] = useState('')
+  const [nomeArquivo, setNomeArquivo] = useState('')
+
   // Pagamento
   const [iniciandoPagamento, setIniciandoPagamento] = useState(false)
   const [planoSelecionado, setPlanoSelecionado] = useState<string | null>(null)
@@ -309,6 +314,30 @@ export default function Home() {
         </div>
       </main>
     )
+  }
+
+  async function processarFoto(arquivo: File) {
+    setErroFoto('')
+    setExtraindoTexto(true)
+    setNomeArquivo(arquivo.name)
+    setLaudo('')
+    try {
+      const form = new FormData()
+      form.append('imagem', arquivo)
+      const res = await fetch('/api/extrair-texto', { method: 'POST', body: form })
+      const data = await res.json()
+      if (data.erro) {
+        setErroFoto(data.erro)
+        setNomeArquivo('')
+      } else {
+        setLaudo(data.texto)
+      }
+    } catch {
+      setErroFoto('Erro de conexão. Tente novamente.')
+      setNomeArquivo('')
+    } finally {
+      setExtraindoTexto(false)
+    }
   }
 
   async function traduzir() {
@@ -619,9 +648,47 @@ export default function Home() {
                 borderRadius: '20px', padding: '28px',
                 boxShadow: '0 4px 24px rgba(108,155,210,0.12)', marginBottom: '20px'
               }}>
-                <label style={{ display: 'block', color: '#4a5580', fontWeight: '600', marginBottom: '10px', fontSize: '0.95rem' }}>
-                  Cole o texto do seu laudo aqui:
-                </label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+                  <label style={{ color: '#4a5580', fontWeight: '600', fontSize: '0.95rem' }}>
+                    Cole o texto do seu laudo aqui:
+                  </label>
+                  <label style={{
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    cursor: semCreditos || extraindoTexto ? 'not-allowed' : 'pointer',
+                    background: '#f0f4ff', border: '1.5px solid #d0dcf0',
+                    borderRadius: '10px', padding: '7px 14px',
+                    fontSize: '0.82rem', fontWeight: '600', color: '#4a7abf',
+                    opacity: semCreditos || extraindoTexto ? 0.6 : 1,
+                    userSelect: 'none'
+                  }}>
+                    {extraindoTexto ? '⏳ Lendo imagem...' : '📷 Enviar foto do laudo'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      style={{ display: 'none' }}
+                      disabled={semCreditos || extraindoTexto}
+                      onChange={e => {
+                        const arquivo = e.target.files?.[0]
+                        if (arquivo) processarFoto(arquivo)
+                        e.target.value = ''
+                      }}
+                    />
+                  </label>
+                </div>
+
+                {erroFoto && (
+                  <div style={{ background: '#fdecea', border: '1px solid #f5c6cb', borderRadius: '10px', padding: '10px 14px', color: '#c0392b', fontSize: '0.85rem', marginBottom: '10px' }}>
+                    ⚠️ {erroFoto}
+                  </div>
+                )}
+
+                {nomeArquivo && !erroFoto && (
+                  <div style={{ background: '#eafaf1', border: '1px solid #a9dfbf', borderRadius: '10px', padding: '8px 14px', color: '#1e8449', fontSize: '0.82rem', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    ✅ Texto extraído de <strong>{nomeArquivo}</strong> — revise abaixo e clique em Explicar
+                  </div>
+                )}
+
                 <textarea
                   value={laudo}
                   onChange={e => setLaudo(e.target.value)}
@@ -644,17 +711,17 @@ export default function Home() {
                 </p>
                 <button
                   onClick={traduzir}
-                  disabled={loading || semCreditos || !laudo.trim()}
+                  disabled={loading || semCreditos || !laudo.trim() || extraindoTexto}
                   style={{
                     width: '100%', marginTop: '16px', padding: '14px',
                     borderRadius: '12px', border: 'none',
-                    background: (loading || semCreditos || !laudo.trim()) ? '#b0c8e8' : 'linear-gradient(135deg, #6c9bd2, #4a7abf)',
+                    background: (loading || semCreditos || !laudo.trim() || extraindoTexto) ? '#b0c8e8' : 'linear-gradient(135deg, #6c9bd2, #4a7abf)',
                     color: 'white', fontSize: '1rem', fontWeight: '600',
-                    cursor: (loading || semCreditos || !laudo.trim()) ? 'not-allowed' : 'pointer',
+                    cursor: (loading || semCreditos || !laudo.trim() || extraindoTexto) ? 'not-allowed' : 'pointer',
                     transition: 'all 0.2s'
                   }}
                 >
-                  {loading ? '⏳ Explicando seu laudo...' : '🔍 Explicar Laudo'}
+                  {loading ? '⏳ Explicando seu laudo...' : extraindoTexto ? '⏳ Lendo imagem...' : '🔍 Explicar Laudo'}
                 </button>
               </div>
 
