@@ -56,6 +56,7 @@ export async function GET(request: NextRequest) {
       .sort((a, b) => b.createdAt - a.createdAt)
       .slice(0, 10)
       .map(u => ({
+        id: u.id,
         email: u.emailAddresses?.[0]?.emailAddress ?? '—',
         criadoEm: new Date(u.createdAt).toLocaleDateString('pt-BR', {
           day: '2-digit', month: '2-digit', year: 'numeric',
@@ -64,6 +65,7 @@ export async function GET(request: NextRequest) {
         plano: (u.publicMetadata as Meta)?.plano ?? null,
         laudos: (u.publicMetadata as Meta)?.usageCount ?? 0,
         whatsapp: (u.publicMetadata as Meta)?.whatsapp ?? null,
+        isPremium: (u.publicMetadata as Meta)?.isPremium ?? false,
       }))
 
     return NextResponse.json({

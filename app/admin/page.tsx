@@ -2,6 +2,16 @@
 
 import { useState, useEffect } from 'react'
 
+type UsuarioRow = {
+  id: string
+  email: string
+  criadoEm: string
+  plano: string | null
+  laudos: number
+  whatsapp: string | null
+  isPremium: boolean
+}
+
 type Stats = {
   totalUsuarios: number
   totalLeads: number
@@ -9,13 +19,7 @@ type Stats = {
   totalLaudos: number
   creditosCirculando: number
   porPlano: { starter: number; familia: number; premium: number }
-  ultimos: {
-    email: string
-    criadoEm: string
-    plano: string | null
-    laudos: number
-    whatsapp: string | null
-  }[]
+  ultimos: UsuarioRow[]
 }
 
 const card = (titulo: string, valor: string | number, sub: string, cor: string, emoji: string) => (
@@ -37,6 +41,7 @@ export default function AdminPage() {
   const [stats, setStats] = useState<Stats | null>(null)
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState('')
+  const [liberandoId, setLiberandoId] = useState<string | null>(null)
 
   async function entrar(e: React.FormEvent) {
     e.preventDefault()
@@ -62,6 +67,29 @@ export default function AdminPage() {
       sessionStorage.setItem('admin_secret', secret)
     } catch {
       setErro('Erro de conexão.')
+    }
+  }
+
+  async function togglePremium(userId: string, liberar: boolean) {
+    setLiberandoId(userId)
+    try {
+      const secret = sessionStorage.getItem('admin_secret') ?? ''
+      await fetch('/api/admin/set-premium', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+        body: JSON.stringify({ userId, liberar })
+      })
+      // Atualiza localmente sem recarregar tudo
+      setStats(prev => prev ? {
+        ...prev,
+        ultimos: prev.ultimos.map(u =>
+          u.id === userId
+            ? { ...u, isPremium: liberar, plano: liberar ? 'admin' : u.plano }
+            : u
+        )
+      } : prev)
+    } finally {
+      setLiberandoId(null)
     }
   }
 
@@ -205,7 +233,7 @@ export default function AdminPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
             <thead>
               <tr style={{ borderBottom: '2px solid #e8edf5' }}>
-                {['E-mail', 'Cadastro', 'Plano', 'Laudos usados', 'WhatsApp'].map(h => (
+                {['E-mail', 'Cadastro', 'Plano', 'Laudos usados', 'WhatsApp', 'Acesso'].map(h => (
                   <th key={h} style={{ textAlign: 'left', padding: '8px 10px', color: '#9aa3b8', fontWeight: '700', fontSize: '0.75rem', textTransform: 'uppercase' }}>
                     {h}
                   </th>
@@ -218,16 +246,48 @@ export default function AdminPage() {
                   <td style={{ padding: '10px 10px', color: '#2c3e6b' }}>{u.email}</td>
                   <td style={{ padding: '10px 10px', color: '#6b7a99', whiteSpace: 'nowrap' }}>{u.criadoEm}</td>
                   <td style={{ padding: '10px 10px' }}>
-                    {u.plano
-                      ? <span style={{ background: '#eaf5ff', color: '#2980b9', borderRadius: '20px', padding: '3px 10px', fontSize: '0.8rem', fontWeight: '600' }}>
-                          {u.plano}
+                    {u.isPremium
+                      ? <span style={{ background: '#fef9e7', color: '#d4ac0d', borderRadius: '20px', padding: '3px 10px', fontSize: '0.8rem', fontWeight: '700' }}>
+                          ⭐ Admin
                         </span>
-                      : <span style={{ color: '#c0c8d8', fontSize: '0.8rem' }}>gratuito</span>
+                      : u.plano
+                        ? <span style={{ background: '#eaf5ff', color: '#2980b9', borderRadius: '20px', padding: '3px 10px', fontSize: '0.8rem', fontWeight: '600' }}>
+                            {u.plano}
+                          </span>
+                        : <span style={{ color: '#c0c8d8', fontSize: '0.8rem' }}>gratuito</span>
                     }
                   </td>
                   <td style={{ padding: '10px 10px', color: '#6b7a99', textAlign: 'center' }}>{u.laudos}</td>
                   <td style={{ padding: '10px 10px', color: u.whatsapp ? '#27ae60' : '#c0c8d8', fontSize: '0.82rem' }}>
                     {u.whatsapp ?? '—'}
+                  </td>
+                  <td style={{ padding: '10px 10px' }}>
+                    {u.isPremium ? (
+                      <button
+                        onClick={() => togglePremium(u.id, false)}
+                        disabled={liberandoId === u.id}
+                        style={{
+                          padding: '5px 12px', borderRadius: '8px', border: '1.5px solid #e0e0e0',
+                          background: 'white', color: '#9aa3b8', fontSize: '0.78rem',
+                          fontWeight: '600', cursor: liberandoId === u.id ? 'not-allowed' : 'pointer'
+                        }}
+                      >
+                        {liberandoId === u.id ? '...' : 'Revogar'}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => togglePremium(u.id, true)}
+                        disabled={liberandoId === u.id}
+                        style={{
+                          padding: '5px 12px', borderRadius: '8px', border: 'none',
+                          background: 'linear-gradient(135deg, #f39c12, #d68910)',
+                          color: 'white', fontSize: '0.78rem',
+                          fontWeight: '700', cursor: liberandoId === u.id ? 'not-allowed' : 'pointer'
+                        }}
+                      >
+                        {liberandoId === u.id ? '...' : '⭐ Liberar'}
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
