@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
-import Anthropic from '@anthropic-ai/sdk'
-
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 const TIPOS_ACEITOS = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
 const TAMANHO_MAX = 5 * 1024 * 1024 // 5 MB
@@ -31,27 +28,41 @@ export async function POST(request: NextRequest) {
 
     const buffer = await arquivo.arrayBuffer()
     const base64 = Buffer.from(buffer).toString('base64')
-    const mediaType = arquivo.type as 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif'
+    const mediaType = arquivo.type === 'image/jpg' ? 'image/jpeg' : arquivo.type
 
-    const resposta = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 2048,
-      messages: [{
-        role: 'user',
-        content: [
-          {
-            type: 'image',
-            source: { type: 'base64', media_type: mediaType, data: base64 }
-          },
-          {
-            type: 'text',
-            text: 'Esta imagem contém um laudo médico ou resultado de exame. Extraia todo o texto visível com fidelidade, preservando valores, unidades e formatação. Retorne apenas o texto extraído, sem comentários ou explicações adicionais.'
-          }
-        ]
-      }]
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY ?? '',
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 2048,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: { type: 'base64', media_type: mediaType, data: base64 }
+            },
+            {
+              type: 'text',
+              text: 'Esta imagem contém um laudo médico ou resultado de exame. Extraia todo o texto visível com fidelidade, preservando valores, unidades e formatação. Retorne apenas o texto extraído, sem comentários ou explicações adicionais.'
+            }
+          ]
+        }]
+      })
     })
 
-    const texto = resposta.content[0].type === 'text' ? resposta.content[0].text.trim() : ''
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      return NextResponse.json({ erro: 'Erro ao processar imagem.' }, { status: 500 })
+    }
+
+    const data = await res.json()
+    const texto = data.content?.[0]?.text?.trim() ?? ''
 
     if (!texto) {
       return NextResponse.json({ erro: 'Não foi possível extrair texto da imagem. Tente uma foto mais nítida.' }, { status: 422 })
